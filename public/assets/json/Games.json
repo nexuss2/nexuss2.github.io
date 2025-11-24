@@ -1,0 +1,6 @@
+[
+  {"id":"games","name":"Games","type":"html","url":"/pages/games?upd="},
+  {"id":"2048","name":"2048","type":"html","url":"/pages/games/2048/"},
+  {"id":"angrybirds","name":"Angry Birds","type":"html","url":"/pages/games/angrybirds/"},
+  {"id":"cookie-clicker","name":"Cookie Clicker","type":"html","url":"/pages/games/cookie-clicker/"}
+]

@@ -1,0 +1,11 @@
+[
+  {"id":"newtab","name":"New Tab","type":"html","url":"/static/?upd="},
+  {"id":"games","name":"Games","type":"html","url":"/pages/games?upd="},
+  {"id":"evil-nexus","name":"Interstellar 3.1","type":"html","url":"/pages/evil-nexus?upd="},
+  {"id":"heartive","name":"Media","type":"html","url":"/pages/heartive?upd="},
+  {"id":"apps","name":"Apps","type":"html","url":"/pages/apps?upd="},
+  {"id":"partners","name":"Partners","type":"html","url":"/pages/partners?upd="},
+  {"id":"data","name":"Data","type":"html","url":"/pages/data?upd="},
+  {"id":"extra","name":"Extra","type":"html","url":"/pages/extra?upd="},
+  {"id":"links","name":"Links","type":"json","content":"<h1>Links</h1><p>This page is served from JSON manifest as an example backup listing.</p>"}
+]

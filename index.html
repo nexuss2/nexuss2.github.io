@@ -488,6 +488,28 @@ function search() {
           if (e.key === "Enter") search();
         });
       });
+
+      // pages manifest support: load a JSON manifest that can describe pages
+      let pagesManifest = null;
+      async function loadPagesManifest() {
+        try {
+          const resp = await fetch('/storage/json/pages.json');
+          if (resp && resp.ok) pagesManifest = await resp.json();
+        } catch (e) {
+          console.warn('Could not load pages manifest:', e);
+        }
+      }
+
+      function findManifestEntry(key) {
+        if (!pagesManifest) return null;
+        const k = String(key).toLowerCase();
+        return pagesManifest.find(e => (e.id && e.id.toLowerCase() === k) || (e.name && e.name.toLowerCase() === k));
+      }
+
+      // load manifest early so navigation can use it
+      document.addEventListener('DOMContentLoaded', () => {
+        loadPagesManifest();
+      });
       const proxyPrefix = "/static/embed.html?p=";
       //unprxy
       function getUnproxifiedUrl(proxifiedUrl) {
@@ -656,7 +678,35 @@ function search() {
         }
         const iframe = document.createElement('iframe');
         iframe.classList.add('tab-iframe');
-        iframe.src = url;
+        // Resolve url via manifest when appropriate. Keep backward compatibility:
+        // - If `url` starts with '/' or 'http' it's treated as a path/url (existing behavior).
+        // - If `url` is a manifest id/name (or starts with 'page:'), the manifest entry is used.
+        (function resolveAndSet(iframeEl, urlParam) {
+          try {
+            if (typeof urlParam === 'string' && !urlParam.startsWith('/') && !urlParam.startsWith('http')) {
+              let key = urlParam;
+              if (key.startsWith('page:')) key = key.slice(5);
+              const entry = findManifestEntry(key);
+              if (entry) {
+                if (entry.type === 'html' && entry.url) {
+                  iframeEl.src = entry.url;
+                } else if (entry.type === 'json' && entry.content) {
+                  // use srcdoc for JSON-specified HTML content
+                  iframeEl.srcdoc = entry.content;
+                } else {
+                  // fallback to string URL if provided
+                  iframeEl.src = entry.url || urlParam;
+                }
+                return;
+              }
+            }
+            // default behavior
+            iframeEl.src = urlParam;
+          } catch (e) {
+            console.error('Error resolving iframe url:', e);
+            iframeEl.src = urlParam;
+          }
+        })(iframe, url);
         iframe.onload = function() {
           updateSearchBar(iframe);
           updateTabName(iframe);

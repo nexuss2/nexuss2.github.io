@@ -1,0 +1,6 @@
+[
+  {"id":"apps","name":"Apps","type":"html","url":"/pages/apps?upd="},
+  {"id":"gradecalc","name":"Gradecalc","type":"html","url":"/pages/apps/gradecalc.html"},
+  {"id":"javascript-executor","name":"JavaScript Executor","type":"html","url":"/pages/apps/javascript-executor.html"},
+  {"id":"kahoot","name":"Kahoot","type":"html","url":"/pages/apps/kahoot.html"}
+]
