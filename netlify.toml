@@ -8,15 +8,20 @@
     Access-Control-Allow-Origin = "*"
     Content-Type = "application/javascript"
 
-# Redirects for FNF Goose Mod game
+# Redirects for FNF Goose Mod
 [[redirects]]
   from = "/pages/games/fnf-goose-mod/*"
   to = "/pages/games/fnf-goose-mod/:splat"
   status = 200
 
-# Trick to make absolute / paths inside FNF Goose Mod point to its folder
 [[redirects]]
   from = "/fnf-goose-mod/*"
   to = "/pages/games/fnf-goose-mod/:splat"
   status = 200
   force = true
+
+# 🔥 Critical catch-all redirect for static proxies and SPA behavior
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
