@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function () {
   document.head.appendChild(fontLink);
 
   const loadingMessages = [
-    'made with love from the nexus team <3 (just me)',
+    'made with love from the Interstellar 3.1 team <3 (just me)',
     'are the 19:36?',
     'boiiii what u say about ajh phonk',
     'are you sure?',

@@ -264,7 +264,7 @@
         </button>
       </div>
       <div class="search-bar-container">
-        <input type="text" id="search-input" value="nexus://new-tab" class="search-bar" autocomplete="off" placeholder="Search or enter a URL">
+        <input type="text" id="search-input" value="Interstellar3.1://newtab" class="search-bar" autocomplete="off" placeholder="Search or enter a URL">
       </div>
       <div class="navbar-right">
         <button onclick="openInAboutBlank()" class="nav-btn">
@@ -288,7 +288,7 @@
       <button class="nav-btn" onclick="setIframe('/pages/games?upd=', 'Games')">
         <i class="fas fa-gamepad"></i>
       </button>
-      <button class="nav-btn" onclick="setIframe('/pages/evil-nexus?upd=', 'Nexus')">
+      <button class="nav-btn" onclick="setIframe('/pages/evil-nexus?upd=', 'Interstellar 3.1')">
         <i class="fa-solid fa-cloud"></i>
       </button>
       <button class="nav-btn" onclick="setIframe('/pages/heartive?upd=', 'Media')">
@@ -372,28 +372,28 @@ function closeTab(event) {
   }
 }
 
-function internal(url) {
+    function internal(url) {
   try {
-    if (url.startsWith('nexus://games-frame')) {
-      const path = url.replace('nexus://', '/pages/');
+    if (url.startsWith('Interstellar3.1://games-frame')) {
+      const path = url.replace('Interstellar3.1://', '/pages/');
       return () => setIframe(path, 'Games');
     }
-    if (url.startsWith('nexus://apps-frame')) {
-      const path = url.replace('nexus://', '/pages/');
+    if (url.startsWith('Interstellar3.1://apps-frame')) {
+      const path = url.replace('Interstellar3.1://', '/pages/');
       return () => setIframe(path, 'Apps');
     }
     switch (url) {
-      case 'nexus://new-tab': return () => setIframe('/static/?upd=', 'New Tab');
-      case 'nexus://settings': return () => setIframe('/pages/prox/settings?upd=', 'Settings');
-      case 'nexus://games': return () => setIframe('/pages/games?upd=', 'Games');
-      case 'nexus://media': return () => setIframe('/pages/heartive?upd=', 'Media');
-      case 'nexus://apps': return () => setIframe('/pages/apps?upd=', 'Apps');
-      case 'nexus://partners': return () => setIframe('/pages/partners?upd=', 'Partners');
-      case 'nexus://evil-nexus': return () => setIframe('/pages/evil-nexus?upd=', 'evil-nexus');
-      case 'nexus://extra': return () => setIframe('/pages/extra?upd=', 'Extra');
-      case 'nexus://data': return () => setIframe('/pages/data?upd=', 'Data');
-      case 'nexus://data-usage': return () => setIframe('/pages/extra/data-use', 'Data Usage');
-      case 'nexus://secret': return () => setIframe('/pages/secret', 'super-secret');
+      case 'Interstellar3.1://newtab': return () => setIframe('/static/?upd=', 'New Tab');
+      case 'Interstellar3.1://settings': return () => setIframe('/pages/prox/settings?upd=', 'Settings');
+      case 'Interstellar3.1://games': return () => setIframe('/pages/games?upd=', 'Games');
+      case 'Interstellar3.1://media': return () => setIframe('/pages/heartive?upd=', 'Media');
+      case 'Interstellar3.1://apps': return () => setIframe('/pages/apps?upd=', 'Apps');
+      case 'Interstellar3.1://partners': return () => setIframe('/pages/partners?upd=', 'Partners');
+      case 'Interstellar3.1://evil-nexus': return () => setIframe('/pages/evil-nexus?upd=', 'evil-nexus');
+      case 'Interstellar3.1://extra': return () => setIframe('/pages/extra?upd=', 'Extra');
+      case 'Interstellar3.1://data': return () => setIframe('/pages/data?upd=', 'Data');
+      case 'Interstellar3.1://data-usage': return () => setIframe('/pages/extra/data-use', 'Data Usage');
+      case 'Interstellar3.1://secret': return () => setIframe('/pages/secret', 'super-secret');
       case 'home': return '/static/';
       case 'settings': return '/pages/prox/settings';
     }
@@ -504,34 +504,34 @@ function search() {
           }
           if (docHref.includes("/pages/games-frame") || docHref.includes("/pages/apps-frame")) {
             const remaining = docHref.replace(`https://${hostname}/pages/`, "");
-            return `nexus://${remaining}`;
+            return `Interstellar3.1://${remaining}`;
           }
           switch (docHref) {
             case `https://${hostname}/static/`:
-              return "nexus://new-tab";
+              return "Interstellar3.1://newtab";
             case `https://${hostname}/pages/prox/settings`:
-              return "nexus://settings";
+              return "Interstellar3.1://settings";
             case `https://${hostname}/pages/games?upd=`:
-              return "nexus://games";
+              return "Interstellar3.1://games";
             case `https://${hostname}/pages/heartive?upd=`:
-              return "nexus://media";
+              return "Interstellar3.1://media";
             case `https://${hostname}/pages/apps?upd=`:
-              return "nexus://apps";
+              return "Interstellar3.1://apps";
             case `https://${hostname}/pages/partners?upd=`:
-              return "nexus://partners";
+              return "Interstellar3.1://partners";
             case `https://${hostname}/pages/evil-nexus?upd=`:
-              return "nexus://evil-nexus";
+              return "Interstellar3.1://evil-nexus";
             case `https://${hostname}/pages/extra?upd=`:
-              return "nexus://extra";
+              return "Interstellar3.1://extra";
             case `https://${hostname}/pages/data?upd=`:
-              return "nexus://data";
+              return "Interstellar3.1://data";
             case `https://${hostname}/pages/extra/data-use`:
-              return "nexus://data-usage";
+              return "Interstellar3.1://data-usage";
             case `https://${hostname}/pages/secret`:
             case `https://${hostname}/pages/secret/`:
-              return "nexus://secret";
+              return "Interstellar3.1://secret";
             case `https://${hostname}/storage/images/cheese.png`:
-              return "nexus://cheese.png";
+              return "Interstellar3.1://cheese.png";
             default:
               if (docHref.startsWith(hostPrefix)) {
                 return decodeURI(docHref.replace(hostPrefix, ""));
@@ -572,7 +572,7 @@ function search() {
               try {
                 host = new URL(__uv$config.decodeUrl(path));
               } catch {
-                host = new URL("https://nexus-is.onthewifi.com");
+                host = new URL("https://interstellar-is.onthewifi.com");
               }
               const faviconUrl = `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${host.hostname}&size=24`;
               let title = '';
