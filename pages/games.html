@@ -44,7 +44,34 @@
   <script>
     const CACHE_KEY = "games-cache";
     const CACHE_TIME_KEY = "games-cache-time";
-    const JSON_PATH = "/storage/json/games.json";
+    const JSON_SOURCES = [
+      "/storage/json/games.json",
+      "/public/assets/json/Games.json",
+      "/public/assets/json/games.json"
+    ];
+
+    function normalizeGameEntry(entry) {
+      // map different manifest shapes to { title, img, url, alt }
+      const title = entry.title || entry.name || entry.id || entry.label || "Untitled";
+      const url = entry.url || entry.link || entry.path || entry.href || "#";
+      const img = entry.img || entry.image || entry.icon || entry.thumbnail || "/storage/images/404.png";
+      const alt = entry.alt || title;
+      return { title, img, url, alt };
+    }
+
+    async function fetchFirstAvailable(sources) {
+      for (const src of sources) {
+        try {
+          const res = await fetch(src, { cache: "no-store" });
+          if (!res.ok) continue;
+          const json = await res.json();
+          if (json && (Array.isArray(json) ? json.length > 0 : Object.keys(json).length > 0)) return json;
+        } catch (e) {
+          // try next
+        }
+      }
+      throw new Error("No manifest available");
+    }
 
     async function loadGames() {
       const cached = localStorage.getItem(CACHE_KEY);
@@ -52,24 +79,23 @@
       if (cached) {
         try {
           const games = JSON.parse(cached);
-          renderGames(games);
+          renderGames(games.map(normalizeGameEntry));
         } catch (e) {
           console.warn("Failed to parse cached games:", e);
         }
       }
 
       try {
-        const res = await fetch(JSON_PATH, { cache: "no-store" });
-        if (!res.ok) throw new Error("Failed to fetch JSON");
-        const freshGames = await res.json();
-        const freshString = JSON.stringify(freshGames);
+        const freshGames = await fetchFirstAvailable(JSON_SOURCES);
+        const normalized = (Array.isArray(freshGames) ? freshGames : freshGames.items || []).map(normalizeGameEntry);
+        const freshString = JSON.stringify(normalized);
         if (freshString !== cached) {
           localStorage.setItem(CACHE_KEY, freshString);
           localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
-          renderGames(freshGames);
+          renderGames(normalized);
         }
       } catch (err) {
-        console.error(`Failed to fetch latest games.json:`, err);
+        console.error(`Failed to fetch latest games manifest:`, err);
       }
     }
 

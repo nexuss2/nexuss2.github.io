@@ -43,33 +43,57 @@
   <script>
     const CACHE_KEY = "apps-cache";
     const CACHE_TIME_KEY = "apps-cache-time";
-    const JSON_PATH = "/storage/json/apps.json";
+    const JSON_SOURCES = [
+      "/storage/json/apps.json",
+      "/public/assets/json/Apps.json",
+      "/public/assets/json/apps.json"
+    ];
+
+    function normalizeAppEntry(entry) {
+      const title = entry.title || entry.name || entry.id || "Untitled";
+      const url = entry.url || entry.link || entry.path || entry.href || "#";
+      const img = entry.img || entry.image || entry.icon || "/storage/images/404.png";
+      const alt = entry.alt || title;
+      return { title, img, url, alt };
+    }
+
+    async function fetchFirstAvailable(sources) {
+      for (const src of sources) {
+        try {
+          const res = await fetch(src, { cache: "no-store" });
+          if (!res.ok) continue;
+          const json = await res.json();
+          if (json && (Array.isArray(json) ? json.length > 0 : Object.keys(json).length > 0)) return json;
+        } catch (e) {
+          // try next
+        }
+      }
+      throw new Error("No manifest available");
+    }
 
     async function loadApps() {
-      const gameGrid = document.getElementById("gameGrid");
       const cached = localStorage.getItem(CACHE_KEY);
 
       if (cached) {
         try {
           const apps = JSON.parse(cached);
-          renderApps(apps);
+          renderApps(apps.map(normalizeAppEntry));
         } catch (e) {
           console.warn("Failed to parse cached apps:", e);
         }
       }
 
       try {
-        const res = await fetch(JSON_PATH, { cache: "no-store" });
-        if (!res.ok) throw new Error("Failed to fetch JSON");
-        const freshApps = await res.json();
-        const freshString = JSON.stringify(freshApps);
+        const freshApps = await fetchFirstAvailable(JSON_SOURCES);
+        const normalized = (Array.isArray(freshApps) ? freshApps : freshApps.items || []).map(normalizeAppEntry);
+        const freshString = JSON.stringify(normalized);
         if (freshString !== cached) {
           localStorage.setItem(CACHE_KEY, freshString);
           localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
-          renderApps(freshApps);
+          renderApps(normalized);
         }
       } catch (err) {
-        console.error(`Failed to fetch latest apps.json:`, err);
+        console.error(`Failed to fetch latest apps manifest:`, err);
       }
     }
 
