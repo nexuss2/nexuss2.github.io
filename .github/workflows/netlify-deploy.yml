@@ -1,0 +1,38 @@
+name: Build & Deploy to Netlify
+
+on:
+  push:
+    branches: [ 'master' ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies (if present)
+        run: |
+          if [ -f package.json ]; then npm ci --silent || true; fi
+
+      - name: Generate JSON manifests
+        run: |
+          node tools/generate-manifests.js
+
+      - name: Show generated files
+        run: |
+          ls -al public/assets/json || true
+          cat public/assets/json/Apps.json || true
+
+      - name: Deploy to Netlify (via netlify-cli)
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          # Install netlify CLI and deploy; change --dir if your publish directory differs
+          npm install -g netlify-cli@latest
+          npx netlify-cli deploy --dir=./ --prod --site="$NETLIFY_SITE_ID" --auth="$NETLIFY_AUTH_TOKEN"
