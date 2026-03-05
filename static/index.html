@@ -1,146 +1,185 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>New Tab</title>
-    <link rel="stylesheet" href="../storage/css/evenmorestyles.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-    />
-    <link rel="stylesheet" href="../storage/css/static.css" />
-  </head>
-  <body> 
-    <script src="/particles.js"></script>
-    <script src="/storage/js/app.js"></script>
-    <div id="particles-js"></div>
-    <script src="/storage/js/particles-toggle.js" defer></script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New Tab</title>
 
-    <h1>NEXUS</h1>
-    <p id="dynamicParagraph">(TEXT)</p>
-    <div id="search-container">
-      <form id="uv-form">
-        <input
-          id="uv-search-engine"
-          value="https://duckduckgo.com/?q=%s&kp=1&ia=web"
-          type="hidden"
-        />
-        <input
-          id="uv-address"
-          type="text"
-          autocomplete="off"
-          class="search-bar-home"
-          placeholder="search (－ _ －) zzZ"
-        />
-        <button id="search-button" onclick="search()">
-          SEARCH <i class="fa-solid fa-magnifying-glass"></i>
-        </button>
-      </form>
-      <div class="desc left-margin">
-        <p id="uv-error"></p>
-        <pre id="uv-error-code"></pre>
-      </div>
-    </div>
+<link rel="stylesheet" href="../storage/css/evenmorestyles.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="../storage/css/static.css">
 
-    <script src="/static/uv/uv.bundle.js" defer></script>
-    <script src="/static/uv/uv.config.js" defer></script>
-    <script src="/static/register-sw.js" defer></script>
-    <script type="text/javascript" src="/storage/js/background.js"></script>
-    <script src="/storage/js/splash-messages.js"></script>
-    
-    <script>
-    const errorSound = new Audio("/storage/mp3/error.mp3");
+<style>
+@keyframes shake {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-7px); }
+  40% { transform: translateX(7px); }
+  60% { transform: translateX(-7px); }
+  80% { transform: translateX(7px); }
+  100% { transform: translateX(0); }
+}
 
-    document.getElementById("uv-form").addEventListener("submit", function (event) {
-    event.preventDefault();
-    search();
-            });
+.shake {
+  animation: shake 0.35s;
+}
+</style>
 
-    function search() {
-    const inputRaw = document.getElementById("uv-address").value.trim();
+</head>
+<body>
 
-    // play error if empty
-    if (!inputRaw) {
-      errorSound.currentTime = 0;
-      errorSound.play();
-      return;
-    }
+<script src="/particles.js"></script>
+<script src="/storage/js/app.js"></script>
 
-       const blockedTerms = new Set([
-         "adult", "adultfriendfinder", "adultfriendfinder.com", "amateurporn", "boobs",
-         "breast", "p0rn", "br3ast", "camgirl", "camsoda", "camsoda.com", "chaturbate",
-         "chaturbate.com", "cum", "erotic", "escortservice", "fuck", "gangbang",
-         "gambling", "privatecams", "hentai", "hentaimovie", "hardcore", "jizz",
-         "marijuana", "meth", "milf", "nudity", "onlyfans", "nfsw", "ome",
-         "ome.tv", "porn", "pussy", "redtube", "boob", "sex",
-         "sex.com", "sexshop", "eroticmedia", "slut", "stripchat", "tits", "tube8",
-         "tube8.com", "webcam", "weed", "williamhill.com", "xhamster", "goon",
-         "xnx", "xvideo", "xxx", "gay sex", "youjizz", "hotvideos",
-         "bet365.com", "bongacams", "bongacams.com", "block-access", "pokerstars.uk"
-       ]);
+<div id="particles-js"></div>
 
-       const lowerInput = inputRaw.toLowerCase();
+<script src="/storage/js/particles-toggle.js" defer></script>
 
-       for (const word of lowerInput.split(/[^a-z0-9.]+/)) {
-         if (blockedTerms.has(word)) {
-            window.location.href = "/pages/apps-frame?url=/pages/blocked.html";
-            return;
-         }
-       }
+<h1>NEXUS</h1>
+<p id="dynamicParagraph">(TEXT)</p>
 
-        const hasProtocol = /^https?:\/\//i.test(inputRaw);
-        const looksLikeURL = /\.[a-z]{2,}(\/|$)/i.test(inputRaw);
-        let finalURL;
+<div id="search-container">
 
-        if (hasProtocol) {
-          finalURL = inputRaw;
-        } else if (looksLikeURL) {
-          finalURL = "http://" + inputRaw;
-        } else {
-          const searchEngine = document.getElementById("uv-search-engine").value;
-          finalURL = searchEngine.replace("%s", encodeURIComponent(inputRaw));
-        }
+<form id="uv-form">
 
-        window.location.href = `/static/embed?p=${finalURL}`;
-      }
-    </script>
+<input
+id="uv-search-engine"
+value="https://duckduckgo.com/?q=%s&kp=1&ia=web"
+type="hidden"
+/>
 
-    <script>
-      async function regsw() {
-        await navigator.serviceWorker.register("/static/uv-sw.js", {
-          scope: "/static/",
-        });
-      }
-      regsw();
-    </script>
+<input
+id="uv-address"
+type="text"
+autocomplete="off"
+class="search-bar-home"
+placeholder="search (－ _ －) zzZ"
+/>
 
-    <script>
-      const code = [
-        "ArrowUp",
-        "ArrowUp",
-        "ArrowDown",
-        "ArrowDown",
-        "ArrowLeft",
-        "ArrowRight",
-        "ArrowLeft",
-        "ArrowRight",
-        "b",
-        "a",
-        "Enter",
-      ];
-      let currentKeyIndex = 0;
-      document.addEventListener("keydown", (event) => {
-        if (event.key === code[currentKeyIndex]) {
-          currentKeyIndex++;
-          if (currentKeyIndex === code.length) {
-            window.location.href = "/pages/secret/";
-            currentKeyIndex = 0;
-          }
-        } else {
-          currentKeyIndex = 0;
-        }
-      });
-    </script>
-  </body>
+<button id="search-button">
+SEARCH <i class="fa-solid fa-magnifying-glass"></i>
+</button>
+
+</form>
+
+<div class="desc left-margin">
+<p id="uv-error"></p>
+<pre id="uv-error-code"></pre>
+</div>
+
+</div>
+
+<audio id="errorSound" src="/storage/mp3/error.mp3" preload="auto"></audio>
+
+<script src="/static/uv/uv.bundle.js" defer></script>
+<script src="/static/uv/uv.config.js" defer></script>
+<script src="/static/register-sw.js" defer></script>
+<script src="/storage/js/background.js"></script>
+<script src="/storage/js/splash-messages.js"></script>
+
+<script>
+
+document.getElementById("uv-form").addEventListener("submit", function(event){
+event.preventDefault();
+search();
+});
+
+function search(){
+
+const searchBar = document.getElementById("uv-address");
+const errorSound = document.getElementById("errorSound");
+const inputRaw = searchBar.value.trim();
+
+if(!inputRaw){
+
+errorSound.currentTime = 0;
+errorSound.play().catch(()=>{});
+
+searchBar.classList.remove("shake");
+void searchBar.offsetWidth; 
+searchBar.classList.add("shake");
+
+return;
+}
+
+const blockedTerms = new Set([
+"adult","adultfriendfinder","adultfriendfinder.com","amateurporn","boobs",
+"breast","p0rn","br3ast","camgirl","camsoda","camsoda.com","chaturbate",
+"chaturbate.com","cum","erotic","escortservice","fuck","gangbang",
+"gambling","privatecams","hentai","hentaimovie","hardcore","jizz",
+"marijuana","meth","milf","nudity","onlyfans","nfsw","ome",
+"ome.tv","porn","pussy","redtube","boob","sex",
+"sex.com","sexshop","eroticmedia","slut","stripchat","tits","tube8",
+"tube8.com","webcam","weed","williamhill.com","xhamster","goon",
+"xnx","xvideo","xxx","gay sex","youjizz","hotvideos",
+"bet365.com","bongacams","bongacams.com","blockaccess","pokerstars.uk"
+]);
+
+const lowerInput = inputRaw.toLowerCase();
+
+for(const word of lowerInput.split(/[^a-z0-9.]+/)){
+if(blockedTerms.has(word)){
+window.location.href="/pages/apps-frame?url=/pages/blocked.html";
+return;
+}
+}
+
+const hasProtocol = /^https?:\/\//i.test(inputRaw);
+const looksLikeURL = /\.[a-z]{2,}(\/|$)/i.test(inputRaw);
+
+let finalURL;
+
+if(hasProtocol){
+finalURL = inputRaw;
+}
+else if(looksLikeURL){
+finalURL = "http://" + inputRaw;
+}
+else{
+const searchEngine = document.getElementById("uv-search-engine").value;
+finalURL = searchEngine.replace("%s",encodeURIComponent(inputRaw));
+}
+
+window.location.href = `/static/embed?p=${finalURL}`;
+
+}
+
+</script>
+
+<script>
+async function regsw(){
+await navigator.serviceWorker.register("/static/uv-sw.js",{scope:"/static/"});
+}
+regsw();
+</script>
+
+<script>
+
+const code = [
+"ArrowUp","ArrowUp","ArrowDown","ArrowDown",
+"ArrowLeft","ArrowRight","ArrowLeft","ArrowRight",
+"b","a","Enter"
+];
+
+let currentKeyIndex = 0;
+
+document.addEventListener("keydown",(event)=>{
+
+if(event.key === code[currentKeyIndex]){
+
+currentKeyIndex++;
+
+if(currentKeyIndex === code.length){
+window.location.href="/pages/secret/";
+currentKeyIndex = 0;
+}
+
+}else{
+currentKeyIndex = 0;
+}
+
+});
+
+</script>
+
+</body>
 </html>
