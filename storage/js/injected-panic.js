@@ -1,16 +1,21 @@
 (() => {
-  const panicKey = localStorage.getItem('panicKey');
+  const panicKey = (localStorage.getItem('panicKey') || '').toLowerCase();
   let panicUrl = localStorage.getItem('panicUrl');
 
-  if (panicUrl && !panicUrl.startsWith('http://') && !panicUrl.startsWith('https://')) {
+  if (!panicKey || !panicUrl) return;
+
+  if (!panicUrl.startsWith('http://') && !panicUrl.startsWith('https://')) {
     panicUrl = 'https://' + panicUrl;
   }
 
-  if (panicKey && panicUrl) {
-    window.addEventListener('keydown', (event) => {
-      if (event.key === panicKey) {
-        top.location.href = panicUrl;
-      }
-    });
-  }
+  window.addEventListener('keydown', (event) => {
+    const tag = document.activeElement.tagName;
+
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
+
+    if (event.key.toLowerCase() === panicKey) {
+      event.preventDefault();
+      window.top.location.href = panicUrl;
+    }
+  });
 })();
