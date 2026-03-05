@@ -50,16 +50,22 @@
     <script src="/storage/js/splash-messages.js"></script>
     
     <script>
-      document.getElementById("uv-form").addEventListener("submit", function (
-        event
-      ) {
-        event.preventDefault();
-        search();
-      });
+    const errorSound = new Audio("/storage/mp3/error.mp3");
 
-      function search() {
-        const inputRaw = document.getElementById("uv-address").value.trim();
-        if (!inputRaw) return;
+    document.getElementById("uv-form").addEventListener("submit", function (event) {
+    event.preventDefault();
+    search();
+            });
+
+    function search() {
+    const inputRaw = document.getElementById("uv-address").value.trim();
+
+    // play error if empty
+    if (!inputRaw) {
+      errorSound.currentTime = 0;
+      errorSound.play();
+      return;
+    }
 
        const blockedTerms = new Set([
          "adult", "adultfriendfinder", "adultfriendfinder.com", "amateurporn", "boobs",
