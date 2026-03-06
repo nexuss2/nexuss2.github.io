@@ -95,33 +95,80 @@ errorSound.currentTime = 0;
 errorSound.play().catch(()=>{});
 
 searchBar.classList.remove("shake");
-void searchBar.offsetWidth; 
+void searchBar.offsetWidth;
 searchBar.classList.add("shake");
 
 return;
 }
 
-const blockedTerms = new Set([
-"adult","adultfriendfinder","adultfriendfinder.com","amateurporn","boobs",
-"breast","p0rn","br3ast","camgirl","camsoda","camsoda.com","chaturbate",
-"chaturbate.com","cum","erotic","escortservice","fuck","gangbang",
-"gambling","privatecams","hentai","hentaimovie","hardcore","jizz",
-"marijuana","meth","milf","nudity","onlyfans","nfsw","ome",
-"ome.tv","porn","pussy","redtube","boob","sex",
-"sex.com","sexshop","eroticmedia","slut","stripchat","tits","tube8",
-"tube8.com","webcam","weed","williamhill.com","xhamster","goon",
-"xnx","xvideo","xxx","gay sex","youjizz","hotvideos",
-"bet365.com","bongacams","bongacams.com","blockaccess","pokerstars.uk"
-]);
+/* ---------- normalize input ---------- */
 
-const lowerInput = inputRaw.toLowerCase();
+let normalized = inputRaw.toLowerCase();
 
-for(const word of lowerInput.split(/[^a-z0-9.]+/)){
-if(blockedTerms.has(word)){
-window.location.href="/pages/apps-frame?url=/pages/blocked.html";
+/* remove spaces like p o r n */
+normalized = normalized.replace(/\s+/g,"");
+
+/* replace number bypasses */
+normalized = normalized
+.replace(/0/g,"o")
+.replace(/1/g,"i")
+.replace(/3/g,"e")
+.replace(/4/g,"a")
+.replace(/5/g,"s")
+.replace(/7/g,"t");
+
+/* remove punctuation */
+normalized = normalized.replace(/[^a-z0-9]/g,"");
+
+/* ---------- blocked terms ---------- */
+
+const blockedTerms = [
+"porn",
+"pornhub",
+"xvideos",
+"xnxx",
+"xhamster",
+"redtube",
+"youjizz",
+"tube8",
+"hentai",
+"sex",
+"milf",
+"boobs",
+"tits",
+"pussy",
+"cum",
+"jizz",
+"escort",
+"stripchat",
+"onlyfans",
+"camgirl",
+"bongacams",
+"chaturbate"
+];
+
+/* ---------- check blocked ---------- */
+
+for(const term of blockedTerms){
+
+if(normalized.includes(term)){
+
+errorSound.currentTime = 0;
+errorSound.play().catch(()=>{});
+
+searchBar.classList.remove("shake");
+void searchBar.offsetWidth;
+searchBar.classList.add("shake");
+
+searchBar.value = "";
+
 return;
+
 }
+
 }
+
+/* ---------- normal search ---------- */
 
 const hasProtocol = /^https?:\/\//i.test(inputRaw);
 const looksLikeURL = /\.[a-z]{2,}(\/|$)/i.test(inputRaw);
