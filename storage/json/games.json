@@ -302,7 +302,7 @@
   {
     "url": "/pages/games-frame?url=/pages/games/eaglercraft/",
     "img": "/pages/images/eaglercraft.png",
-    "alt": "Eaglercraft Minecraft",
+    "alt": "Eaglercraft (Minecraft)",
     "title": "Eaglercraft (Minecraft)"
   },
   {
@@ -436,6 +436,12 @@
     "img": "/pages/images/mkds.png",
     "alt": "Mario Kart DS",
     "title": "Mario Kart DS"
+  },
+  {
+    "url": "/pages/games-frame?url=/pages/games/mclegacy/",
+    "img": "/pages/images/mclegacy.webp",
+    "alt": "Minecraft Legacy Edition",
+    "title": "Minecraft Legacy Edition"
   },
   {
     "url": "/pages/games-frame?url=/pages/games/monkey-mart/",
