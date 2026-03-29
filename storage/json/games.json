@@ -366,6 +366,12 @@
     "title": "Getaway Shootout"
   },
   {
+    "url": "/pages/games-frame?url=/pages/games/hollowknight/",
+    "img": "/pages/images/hollowknight.jpg",
+    "alt": "Hollow Knight",
+    "title": "Hollow Knight"
+  },
+  {
     "url": "/pages/games-frame?url=/pages/games/incredibox/",
     "img": "/pages/images/incredibox.png",
     "alt": "Incredibox",
@@ -760,6 +766,12 @@
     "img": "/pages/images/undertale.png",
     "alt": "Undertale",
     "title": "Undertale"
+  },
+  {
+    "url": "/pages/games-frame?url=/pages/games/untitledgoosegame/",
+    "img": "/pages/images/goosegame.png",
+    "alt": "Untitled Goose Game",
+    "title": "Untitled Goose Game"
   },
   {
     "url": "/pages/games-frame?url=/pages/games/vex-series/",
