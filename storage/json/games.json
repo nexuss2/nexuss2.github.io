@@ -162,6 +162,12 @@
     "title": "Clash Royale"
   },
   {
+    "url": "/pages/games-frame?url=/pages/games/cheeserolling/",
+    "img": "/pages/images/cheeser.webp",
+    "alt": "Cheese Rolling",
+    "title": "Cheese Rolling"
+  },
+  {
     "url": "/pages/games-frame?url=/pages/games/cookie-clicker/",
     "img": "/pages/images/cck.webp",
     "alt": "Cookie Clicker",
