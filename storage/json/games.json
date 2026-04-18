@@ -552,6 +552,12 @@
     "title": "Retro Bowl College"
   },
   {
+    "url": "/pages/games-frame?url=/pages/games/rocketgoal/",
+    "img": "/pages/images/rocketgoal.png",
+    "alt": "Rocket Goal",
+    "title": "Rocket Goal"
+  },
+  {
     "url": "/static/embed?p=https://easyfun.gg/embed/roblox.html",
     "img": "/pages/images/rblx.png",
     "alt": "Roblox",
