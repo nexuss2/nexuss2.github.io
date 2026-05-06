@@ -1,893 +1,1168 @@
-<!doctype html>
-<html lang="en">
-   <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
-      <meta http-equiv="Pragma" content="no-cache">
-      <meta http-equiv="Expires" content="0">
-      <title>Animal Crossing Web Port</title>
-      <link rel="icon" href="data:,">
-      <style>
-         :root {
-         color-scheme: dark;
-         --bg-0: #0d1217;
-         --bg-1: #172129;
-         --panel: rgba(18, 26, 32, 0.92);
-         --panel-border: rgba(255, 255, 255, 0.08);
-         --text: #eef3f8;
-         --muted: #a8b5c3;
-         --accent: #83d18a;
-         --accent-2: #e5c35f;
-         --danger: #ff8e8e;
-         }
-         * {
-         box-sizing: border-box;
-         }
-         html,
-         body {
-         margin: 0;
-         width: 100%;
-         min-height: 100vh;
-         font-family: Inter, "Segoe UI", system-ui, sans-serif;
-         color: var(--text);
-         background: #050607;
-         overflow: hidden;
-         }
-         #boot-video{
-         position:fixed;
-         top:0;
-         left:0;
-         width:100vw;
-         height:100vh;
-         object-fit:fill;
-         z-index:1;
-         background:#000;
-         display:block;
-         }
-         .wrap {
-         width: 100vw;
-         height: 100vh;
-         margin: 0;
-         padding: 0;
-         }
-         .hero {
-         display: none;
-         }
-         h1 {
-         margin: 0;
-         font-size: clamp(2rem, 4vw, 3.2rem);
-         line-height: 0.95;
-         letter-spacing: 0;
-         }
-         p {
-         margin: 0;
-         color: var(--muted);
-         max-width: 72ch;
-         }
-         .layout {
-         display: grid;
-         grid-template-columns: 1fr;
-         grid-template-rows: 1fr;
-         height: 100vh;
-         gap: 0;
-         align-items: stretch;
-         }
-         .panel {
-         background: transparent;
-         border: 0;
-         border-radius: 0;
-         padding: 0;
-         backdrop-filter: none;
-         box-shadow: none;
-         }
-         .stack {
-         display: grid;
-         gap: 14px;
-         }
-         .label {
-         font-size: 0.82rem;
-         font-weight: 700;
-         letter-spacing: 0.08em;
-         text-transform: uppercase;
-         color: var(--muted);
-         }
-         .status {
-         padding: 12px 14px;
-         border-radius: 8px;
-         background: rgba(255, 255, 255, 0.04);
-         color: var(--text);
-         min-height: 48px;
-         }
-         input[type="file"] {
-         width: 100%;
-         padding: 12px;
-         border-radius: 8px;
-         border: 1px solid var(--panel-border);
-         background: rgba(255, 255, 255, 0.04);
-         color: var(--text);
-         }
-         button {
-         appearance: none;
-         border: 0;
-         border-radius: 8px;
-         padding: 12px 16px;
-         font: inherit;
-         font-weight: 700;
-         color: #0b1218;
-         background: linear-gradient(135deg, var(--accent), #b7ef8b);
-         cursor: pointer;
-         }
-         button[disabled] {
-         cursor: not-allowed;
-         opacity: 0.45;
-         }
-         .secondary {
-         color: var(--text);
-         background: rgba(255, 255, 255, 0.08);
-         }
-         .hint {
-         font-size: 0.95rem;
-         color: var(--muted);
-         }
-         .alert {
-         color: var(--danger);
-         }
-         canvas {
-         width: 100%;
-         height: 100vh;
-         display: block;
-         background: #000;
-         border-radius: 0;
-         border: 0;
-         opacity: 0;
-         transition: opacity 280ms ease;
-         }
-         body.game-visible canvas {
-         opacity: 1;
-         }
-         .title-menu-overlay {
-         position: fixed;
-         left: 50%;
-         top: 70%;
-         z-index: 12;
-         display: none;
-         transform: translate(-50%, -50%);
-         pointer-events: none;
-         text-align: center;
-         font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
-         font-weight: 800;
-         color: #f4df9a;
-         text-shadow:
-         2px 2px 0 rgba(33, 20, 6, 0.95),
-         0 0 8px rgba(20, 12, 4, 0.8);
-         }
-         body.game-visible:not(.title-menu-dismissed) .title-menu-overlay {
-         display: none;
-         gap: 10px;
-         }
-         .title-menu-overlay div {
-         font-size: 24px;
-         line-height: 1;
-         white-space: nowrap;
-         }
-         .title-menu-overlay div:first-child {
-         color: #fff0aa;
-         font-size: 27px;
-         }
-         .title-menu-overlay .credit {
-         margin-top: 6px;
-         color: rgba(255, 238, 185, 0.82);
-         font-size: 17px;
-         }
-         pre {
-         display: none;
-         }
-         #start-text{
-         position:fixed;
-         inset:0;
-         display:flex;
-         align-items:center;
-         justify-content:center;
-         background:#000;
-         color:white;
-         font-size:28px;
-         font-weight:bold;
-         cursor:pointer;
-         z-index:9999; /* ABOVE video */
-         user-select:none;
-         }
-         /* optional glow / nicer look */
-         #start-text{
-         text-shadow:0 0 10px rgba(255,255,255,0.6);
-         }
-         .debug-panel {
-         position: fixed;
-         left: 8px;
-         top: 8px;
-         z-index: 40;
-         display: none;
-         min-width: 260px;
-         max-width: min(520px, calc(100vw - 16px));
-         padding: 8px 10px;
-         border: 1px solid rgba(255, 238, 170, 0.35);
-         border-radius: 6px;
-         background: rgba(5, 6, 7, 0.78);
-         color: #ffeaa0;
-         font: 12px/1.35 Consolas, "SFMono-Regular", monospace;
-         white-space: pre-wrap;
-         pointer-events: none;
-         }
-         body.debug-visible .debug-panel {
-         display: block;
-         }
-         ul {
-         margin: 0;
-         padding-left: 18px;
-         color: var(--muted);
-         }
-         li + li {
-         margin-top: 8px;
-         }
-         .controls-panel,
-         .game-panel .label,
-         #error-banner {
-         display: none;
-         }
-         .touch-controls {
-         position: fixed;
-         inset: auto 18px 18px 18px;
-         z-index: 20;
-         display: none;
-         pointer-events: none;
-         user-select: none;
-         -webkit-user-select: none;
-         touch-action: none;
-         opacity: 0.78;
-         transition: opacity 160ms ease, transform 160ms ease;
-         }
-         .touch-cluster,
-         .touch-shoulders,
-         .touch-menu {
-         position: absolute;
-         pointer-events: none;
-         }
-         .touch-stick {
-         left: 0;
-         bottom: 0;
-         width: 168px;
-         height: 168px;
-         }
-         .touch-actions {
-         right: 0;
-         bottom: 0;
-         width: 174px;
-         height: 174px;
-         }
-         .touch-shoulders {
-         left: 0;
-         right: 0;
-         bottom: 172px;
-         display: flex;
-         justify-content: space-between;
-         gap: 10px;
-         }
-         .touch-menu {
-         left: 50%;
-         bottom: 12px;
-         transform: translateX(-50%);
-         }
-         .touch-btn {
-         position: absolute;
-         width: 58px;
-         height: 58px;
-         padding: 0;
-         border: 1px solid rgba(255, 255, 255, 0.34);
-         border-radius: 8px;
-         color: rgba(255, 255, 255, 0.94);
-         background: rgba(10, 18, 24, 0.54);
-         box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
-         font-size: 1rem;
-         line-height: 1;
-         pointer-events: auto;
-         touch-action: none;
-         transition: background 120ms ease, color 120ms ease, transform 120ms ease;
-         }
-         .touch-btn.is-active {
-         background: rgba(131, 209, 138, 0.78);
-         color: #07100b;
-         transform: translateY(1px);
-         }
-         .touch-up { left: 55px; top: 0; }
-         .touch-left { left: 0; top: 55px; }
-         .touch-right { right: 0; top: 55px; }
-         .touch-down { left: 55px; bottom: 0; }
-         .touch-a { right: 0; top: 56px; width: 68px; height: 68px; }
-         .touch-b { left: 24px; top: 86px; }
-         .touch-x { right: 54px; top: 0; }
-         .touch-y { right: 88px; bottom: 0; }
-         .touch-shoulders .touch-btn,
-         .touch-menu .touch-btn {
-         position: static;
-         width: auto;
-         min-width: 64px;
-         height: 46px;
-         padding: 0 14px;
-         font-size: 0.9rem;
-         }
-         @media (hover: none), (pointer: coarse) {
-         .touch-controls {
-         display: block;
-         }
-         }
-         body.touch-visible .touch-controls {
-         display: block;
-         }
-         @media (max-width: 960px) {
-         .layout {
-         grid-template-columns: 1fr;
-         }
-         }
-      </style>
-   </head>
-   <body>
-      <div id="start-text">click to load</div>
-      <video id="boot-video" playsinline preload="auto">
-         <source src="loading.mp4" type="video/mp4">
-      </video>
-      <div class="wrap">
-         <section class="hero">
-            <h1>Animal Crossing<br>Web Port</h1>
-            <p>
-               This build expects your own USA revision 0 disc image. Choose an
-               `.iso`, `.gcm`, or `.ciso`, then launch. Dolphin `.rvz` images
-               need to be converted to one of those formats first. Saves are mounted to
-               IndexedDB when the browser exposes `IDBFS`.
-            </p>
-         </section>
-         <section class="layout">
-            <div class="panel stack controls-panel">
-               <div>
-                  <div class="label">Status</div>
-                  <div class="status" id="status">Loading runtime...</div>
-               </div>
-               <div>
-                  <div class="label">Disc Image</div>
-                  <input id="rom-input" type="file" accept=".iso,.gcm,.ciso,.rvz">
-               </div>
-               <div class="stack" style="grid-template-columns: 1fr 1fr;">
-                  <button id="launch-button" disabled>Launch Game</button>
-                  <button id="sync-button" class="secondary" disabled>Flush Saves</button>
-               </div>
-               <div class="hint" id="file-hint">No ROM selected.</div>
-               <div class="hint">
-                  First boot can take a bit because the disc image is copied into the
-                  in-memory filesystem before the game starts. Use CISO for the
-                  browser build; full ISO/GCM images are usually too large.
-               </div>
-               <ul>
-                  <li>Serve this folder over HTTP. Opening `index.html` directly from `file://` is not enough.</li>
-                  <li>WebGL 2 is required.</li>
-                  <li>Reload the page to switch ROMs.</li>
-               </ul>
+<!doctypehtml>
+<html lang=en>
+    <head>
+        <meta charset=utf-8>
+        <meta content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover" name=viewport>
+        <meta content=#000000 name=theme-color>
+        <meta content=dark name=color-scheme>
+        <meta content=yes name=apple-mobile-web-app-capable>
+        <meta content=black-translucent name=apple-mobile-web-app-status-bar-style>
+        <meta content=Slider name=apple-mobile-web-app-title>
+        <meta content=yes name=mobile-web-app-capable>
+        <link href=manifest.webmanifest rel=manifest>
+        <link href=icon-192.png rel=icon type=image/png sizes=192x192>
+        <link href=icon-192.png rel=apple-touch-icon>
+        <link href=fonts/work-sans-400.woff2 rel=preload type=font/woff2 as=font crossorigin>
+        <link href=fonts/fragment-mono-400.woff2 rel=preload type=font/woff2 as=font crossorigin>
+        <link href=shell.css rel=stylesheet>
+        <title>Slider</title>
+    </head>
+    <body>
+        <div id=container>
+            <canvas id=canvas oncontextmenu=event.preventDefault() tabindex=-1></canvas>
+        </div>
+        <div id=status style=display:none></div>
+        <div id=progress></div>
+        <div id=loading-overlay aria-hidden=true>
+            <svg viewBox="0 0 24 24" aria-hidden=true height=56 width=56 xmlns=http://www.w3.org/2000/svg>
+                <circle cx=12 cy=12 r=0 fill=currentColor>
+                    <animate attributeName=r begin=0;SVGftllRbIv.begin+0.6s dur=1.2s fill=freeze values=0;11 id=SVG0cdVlcnN calcMode=spline keySplines=.52,.6,.25,.99/>
+                    <animate attributeName=opacity begin=0;SVGftllRbIv.begin+0.6s dur=1.2s fill=freeze values=1;0 calcMode=spline keySplines=.52,.6,.25,.99/>
+                </circle>
+                <circle cx=12 cy=12 r=0 fill=currentColor>
+                    <animate attributeName=r begin=SVG0cdVlcnN.begin+0.6s dur=1.2s fill=freeze values=0;11 id=SVGftllRbIv calcMode=spline keySplines=.52,.6,.25,.99/>
+                    <animate attributeName=opacity begin=SVG0cdVlcnN.begin+0.6s dur=1.2s fill=freeze values=1;0 calcMode=spline keySplines=.52,.6,.25,.99/>
+                </circle>
+            </svg>
+        </div>
+        <div id=build-tag title="Build identifier">7b1ac112d2ae</div>
+        <div id=touch-controls aria-hidden=true>
+            <div id=tc-stick-zone>
+                <div id=tc-stick-hint aria-hidden=true>
+                    <svg viewBox="0 0 100 100">
+                        <circle cx=50 cy=50 r=46 class=hint-bg/>
+                        <circle cx=50 cy=50 r=20 class=hint-knob/>
+                    </svg>
+                </div>
             </div>
-            <div class="panel stack game-panel">
-               <canvas id="canvas" tabindex="-1"></canvas>
-               <div class="title-menu-overlay" id="title-menu-overlay" aria-hidden="true">
-                  <div>Start Game</div>
-                  <div>Options</div>
-                  <div>Quit Game</div>
-                  <div class="credit">Port by Bog</div>
-               </div>
-               <div class="touch-controls" id="touch-controls" aria-label="Touch controls">
-                  <div class="touch-cluster touch-stick" aria-label="Move">
-                     <button class="touch-btn touch-up" data-touch="stick_up" aria-label="Move up">^</button>
-                     <button class="touch-btn touch-left" data-touch="stick_left" aria-label="Move left">&lt;</button>
-                     <button class="touch-btn touch-right" data-touch="stick_right" aria-label="Move right">&gt;</button>
-                     <button class="touch-btn touch-down" data-touch="stick_down" aria-label="Move down">v</button>
-                  </div>
-                  <div class="touch-shoulders" aria-label="Shoulder buttons">
-                     <button class="touch-btn" data-touch="l" aria-label="L button">L</button>
-                     <button class="touch-btn" data-touch="z" aria-label="Z button">Z</button>
-                     <button class="touch-btn" data-touch="r" aria-label="R button">R</button>
-                  </div>
-                  <div class="touch-menu">
-                     <button class="touch-btn" data-touch="start" aria-label="Start button">Start</button>
-                  </div>
-                  <div class="touch-cluster touch-actions" aria-label="Action buttons">
-                     <button class="touch-btn touch-x" data-touch="x" aria-label="X button">X</button>
-                     <button class="touch-btn touch-y" data-touch="y" aria-label="Y button">Y</button>
-                     <button class="touch-btn touch-b" data-touch="b" aria-label="B button">B</button>
-                     <button class="touch-btn touch-a" data-touch="a" aria-label="A button">A</button>
-                  </div>
-               </div>
-               <div class="label">Log</div>
-               <pre id="log"></pre>
-               <div class="hint alert" id="error-banner"></div>
-               <div class="debug-panel" id="debug-panel"></div>
+            <div id=tc-cstick-zone>
+                <div id=tc-cstick-hint aria-hidden=true>
+                    <svg viewBox="0 0 100 100">
+                        <circle cx=50 cy=50 r=46 class=hint-bg/>
+                        <circle cx=50 cy=50 r=20 class=hint-knob/>
+                        <text class=tc-label x=50 y=50>C</text>
+                    </svg>
+                </div>
             </div>
-         </section>
-      </div>
-      <script>
-         window.addEventListener("load", () => {
-         
-             const startText = document.getElementById("start-text");
-             const video = document.getElementById("boot-video");
-         
-             let started = false;
-         
-             function startGameNow(){
-                 if(started) return;
-                 started = true;
-         
-                 video.remove();
-                 launchGame();
-             }
-         
-             // CLICK TO START
-             startText.addEventListener("click", () => {
-         
-                 startText.style.display = "none"; // safer than remove
-         
-                 video.muted = false;
-                 video.play().catch(()=>{});
-         
-             });
-         
-             // START GAME AFTER VIDEO
-             video.addEventListener("ended", startGameNow);
-         
-             // FALLBACK
-             video.addEventListener("error", startGameNow);
-         
-         });
-      </script>
-      <script>
-         const statusEl = document.getElementById("status");
-         const fileHintEl = document.getElementById("file-hint");
-         const logEl = document.getElementById("log");
-         const errorBannerEl = document.getElementById("error-banner");
-         const launchButton = document.getElementById("launch-button");
-         const syncButton = document.getElementById("sync-button");
-         const romInput = document.getElementById("rom-input");
-         const canvas = document.getElementById("canvas");
-         const debugPanel = document.getElementById("debug-panel");
-         const dismissTitleOverlay = () => document.body.classList.add("title-menu-dismissed");
-         const buildVersion = "20260429-msg-stall-fix-1";
-         if (location.search || location.hash) {
-             history.replaceState(null, "", location.pathname);
-         }
-         const debugEnabled = new URLSearchParams(location.search).has("debug");
-         const autoRomFileName = "Animal Crossing (USA).iso";
-         const shaderFiles = [
-             "default.vert",
-             "default.frag",
-             "default_web.vert",
-             "default_web.frag"
-         ];
-         
-         let runtimeReady = false;
-         let saveReady = false;
-         let gameStarted = false;
-         let autoLaunchStarted = false;
-         let syncTimer = null;
-         let touchState = 0;
-         const debugLines = [];
-         const maxBrowserDiscBytes = 768 * 1024 * 1024;
-         const touchBits = {
-             a: 1 << 0,
-             b: 1 << 1,
-             x: 1 << 2,
-             y: 1 << 3,
-             start: 1 << 4,
-             z: 1 << 5,
-             l: 1 << 6,
-             r: 1 << 7,
-             stick_up: 1 << 8,
-             stick_down: 1 << 9,
-             stick_left: 1 << 10,
-             stick_right: 1 << 11,
-             dpad_up: 1 << 12,
-             dpad_down: 1 << 13,
-             dpad_left: 1 << 14,
-             dpad_right: 1 << 15
-         };
-         window.addEventListener("keydown", (event) => {
-             if (["Enter", " ", "a", "A"].includes(event.key)) {
-                 dismissTitleOverlay();
-             }
-         });
-         const noisyLogPrefixes = [
-             "[PC/Web] field_draw:",
-             "[PC/Web] Actor_draw:",
-             "[PC/Web] Actor_info_",
-             "[PC/Web] graph_main:",
-             "[PC/Web] graph_proc:",
-             "[WALK]",
-             "[TRG_",
-             "[SCENE_MODE]",
-             "[NEOS_OUT]"
-         ];
-         
-         function isNoisyRuntimeLog(text) {
-             return noisyLogPrefixes.some((prefix) => text.startsWith(prefix));
-         }
-         
-         function appendLog(text) {
-             if (!text) {
-                 return;
-             }
-             if (isNoisyRuntimeLog(String(text))) {
-                 return;
-             }
-             console.log(text);
-             debugLine(String(text));
-         }
-         
-         function setStatus(text) {
-             statusEl.textContent = text;
-             console.info(`[Status] ${text}`);
-             debugLine(`[Status] ${text}`);
-         }
-         
-         function hashBytes(bytes) {
-             let hash = 2166136261;
-             for (let i = 0; i < bytes.length; i++) {
-                 hash ^= bytes[i];
-                 hash = Math.imul(hash, 16777619);
-             }
-             return (hash >>> 0).toString(16).padStart(8, "0");
-         }
-         
-         function debugLine(text) {
-             if (!debugEnabled) {
-                 return;
-             }
-             debugLines.push(text);
-             while (debugLines.length > 12) {
-                 debugLines.shift();
-             }
-             debugPanel.textContent = [
-                 `Build: ${buildVersion}`,
-                 `URL: ${location.search || "(none)"}`,
-                 ...debugLines
-             ].join("\n");
-         }
-         
-         function setTouchBit(name, pressed) {
-             const bit = touchBits[name];
-             if (!bit) {
-                 return;
-             }
-         
-             touchState = pressed ? (touchState | bit) : (touchState & ~bit);
-             if (window.Module) {
-                 window.Module.__touchState = touchState;
-             }
-         }
-         
-         function bindTouchControls() {
-             const buttons = document.querySelectorAll("[data-touch]");
-         
-             for (const button of buttons) {
-                 const name = button.dataset.touch;
-         
-                 button.addEventListener("pointerdown", (event) => {
-                     event.preventDefault();
-                     document.body.classList.add("touch-visible");
-                     button.setPointerCapture?.(event.pointerId);
-                     button.classList.add("is-active");
-                     setTouchBit(name, true);
-                     canvas.focus();
-                     unlockAudio();
-                 });
-         
-                 const release = (event) => {
-                     event.preventDefault();
-                     button.classList.remove("is-active");
-                     setTouchBit(name, false);
-                 };
-         
-                 button.addEventListener("pointerup", release);
-                 button.addEventListener("pointercancel", release);
-                 button.addEventListener("lostpointercapture", release);
-                 button.addEventListener("contextmenu", (event) => event.preventDefault());
-             }
-         
-             window.addEventListener("blur", () => {
-                 touchState = 0;
-                 if (window.Module) {
-                     window.Module.__touchState = 0;
-                 }
-                 for (const button of buttons) {
-                     button.classList.remove("is-active");
-                 }
-             });
-         
-             window.addEventListener("touchstart", () => {
-                 document.body.classList.add("touch-visible");
-             }, { passive: true, once: true });
-         }
-         
-         async function unlockAudio() {
-             const audioContext = Module && Module.SDL2 && Module.SDL2.audioContext;
-             if (audioContext && audioContext.state === "suspended") {
-                 try {
-                     await audioContext.resume();
-                     console.info("[Audio] Browser audio unlocked.");
-                 } catch (error) {
-                     console.warn("[Audio] Unlock failed:", error);
-                 }
-             }
-         }
-         
-         window.addEventListener("unhandledrejection", (event) => {
-             const reason = String(event.reason || "");
-             if ((reason.includes("RuntimeError: memory access out of bounds") ||
-                  reason.includes("RuntimeError: function signature mismatch")) && gameStarted) {
-                 event.preventDefault();
-             }
-         });
-         
-         window.addEventListener("error", (event) => {
-             const message = String(event.message || event.error || "");
-             if ((message.includes("RuntimeError: memory access out of bounds") ||
-                  message.includes("RuntimeError: function signature mismatch")) && gameStarted) {
-                 event.preventDefault();
-             }
-         });
-         
-         function isSupportedDiscImage(file) {
-             return file && /\.(iso|gcm|ciso)$/i.test(file.name);
-         }
-         
-         function isOversizedBrowserDisc(file) {
-             return file && /\.(iso|gcm)$/i.test(file.name) && file.size > maxBrowserDiscBytes;
-         }
-         
-         function updateLaunchState() {
-             const file = romInput.files[0];
-             launchButton.disabled = !(runtimeReady && saveReady && isSupportedDiscImage(file) && !isOversizedBrowserDisc(file) && !gameStarted);
-             syncButton.disabled = !(runtimeReady && saveReady);
-         }
-         
-         function ensureDir(path) {
-             try {
-                 Module.FS.mkdir(path);
-             } catch (error) {
-                 if (!String(error).includes("File exists")) {
-                     throw error;
-                 }
-             }
-         }
-         
-         function syncSaves(populate) {
-             return new Promise((resolve, reject) => {
-                 if (!runtimeReady || typeof IDBFS === "undefined") {
-                     resolve();
-                     return;
-                 }
-                 Module.FS.syncfs(populate, (error) => {
-                     if (error) {
-                         reject(error);
-                     } else {
-                         resolve();
-                     }
-                 });
-             });
-         }
-         
-         async function writeRomToFs(file) {
-             const romBytes = new Uint8Array(await file.arrayBuffer());
-             ensureDir("/rom");
-         
-             for (const entry of Module.FS.readdir("/rom")) {
-                 if (entry !== "." && entry !== "..") {
-                     Module.FS.unlink(`/rom/${entry}`);
-                 }
-             }
-         
-             Module.FS.writeFile(`/rom/${file.name}`, romBytes);
-             fileHintEl.textContent = `Selected: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MiB)`;
-         }
-         
-         async function writeAutoRomToFs() {
-             ensureDir("/rom");
-         
-             for (const entry of Module.FS.readdir("/rom")) {
-                 if (entry !== "." && entry !== "..") {
-                     Module.FS.unlink(`/rom/${entry}`);
-                 }
-             }
-         
-             const response = await fetch(encodeURI(autoRomFileName));
-             if (!response.ok) {
-                 throw new Error(`Could not load ${autoRomFileName} over HTTP (${response.status})`);
-             }
-         
-             const contentLength = Number(response.headers.get("Content-Length") || "0");
-             if (contentLength > 0) {
-                 appendLog(`[ROM] Loading ${autoRomFileName} (${(contentLength / (1024 * 1024)).toFixed(2)} MiB)`);
-             } else {
-                 appendLog(`[ROM] Loading ${autoRomFileName}`);
-             }
-         
-             const romBytes = new Uint8Array(await response.arrayBuffer());
-             Module.FS.writeFile(`/rom/${autoRomFileName}`, romBytes);
-             fileHintEl.textContent = `Auto-loaded: ${autoRomFileName} (${(romBytes.byteLength / (1024 * 1024)).toFixed(2)} MiB)`;
-         }
-         
-         async function writeShadersToFs() {
-             ensureDir("./shaders");
-         
-             for (const shaderFile of shaderFiles) {
-                 const response = await fetch(`shaders/${shaderFile}?v=${buildVersion}-${Date.now()}`, { cache: "no-store" });
-                 if (!response.ok) {
-                     throw new Error(`Could not load shader file: shaders/${shaderFile}`);
-                 }
-                 const shaderBytes = new Uint8Array(await response.arrayBuffer());
-                 appendLog(`[ShaderFetch] ${shaderFile} bytes=${shaderBytes.byteLength} hash=${hashBytes(shaderBytes)}`);
-                 Module.FS.writeFile(`/shaders/${shaderFile}`, shaderBytes);
-             }
-         }
-         
-         async function launchGame() {
-             if (gameStarted) {
-                 return;
-             }
-         
-             launchButton.disabled = true;
-             errorBannerEl.textContent = "";
-             setStatus("Loading disc image...");
-         
-             try {
-                 await writeAutoRomToFs();
-                 setStatus("Loading shader files...");
-                 await writeShadersToFs();
-                 setStatus("Starting game...");
-                 gameStarted = true;
-                 document.body.classList.add("game-visible");
-                 canvas.focus();
-                 Module.callMain([]);
-         
-                 if (typeof IDBFS !== "undefined" && syncTimer === null) {
-                     syncTimer = window.setInterval(() => {
-                         syncSaves(false).catch((error) => appendLog(`Save sync failed: ${error}`));
-                     }, 10000);
-                 }
-         
-                 updateLaunchState();
-             } catch (error) {
-                 gameStarted = false;
-                 document.body.classList.remove("game-visible");
-                 setStatus("Launch failed.");
-                 errorBannerEl.textContent = String(error);
-                 appendLog(`Launch failed: ${error}`);
-                 updateLaunchState();
-             }
-         }
-         
-         
-         romInput.addEventListener("change", () => {
-             const file = romInput.files[0];
-             errorBannerEl.textContent = "";
-             if (!file) {
-                 fileHintEl.textContent = "No ROM selected.";
-             } else if (!isSupportedDiscImage(file)) {
-                 fileHintEl.textContent = `Unsupported: ${file.name}`;
-                 errorBannerEl.textContent = "RVZ must be converted to ISO, GCM, or CISO before launching.";
-             } else if (isOversizedBrowserDisc(file)) {
-                 fileHintEl.textContent = `Too large for browser launch: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MiB)`;
-                 errorBannerEl.textContent = "Use a CISO for the web build. Full ISO/GCM images are too large once copied into WASM memory.";
-             } else {
-                 fileHintEl.textContent = `Ready: ${file.name}`;
-             }
-             updateLaunchState();
-         });
-         
-         launchButton.addEventListener("click", () => {
-             launchGame();
-         });
-         
-         syncButton.addEventListener("click", async () => {
-             setStatus("Flushing saves...");
-             try {
-                 await syncSaves(false);
-                 setStatus("Saves flushed.");
-             } catch (error) {
-                 setStatus("Save flush failed.");
-                 errorBannerEl.textContent = String(error);
-             }
-         });
-         
-         for (const eventName of ["pointerdown", "mousedown", "touchstart", "keydown", "click"]) {
-             window.addEventListener(eventName, unlockAudio, { passive: true });
-         }
-         
-         window.addEventListener("beforeunload", () => {
-             if (runtimeReady && saveReady && typeof IDBFS !== "undefined") {
-                 Module.FS.syncfs(false, () => {});
-             }
-         });
-         
-         bindTouchControls();
-         console.info(`[Build] ${buildVersion}`);
-         if (debugEnabled) {
-             document.body.classList.add("debug-visible");
-             debugLine("Debug overlay enabled.");
-         }
-         
-         var Module = {
-             noInitialRun: true,
-             __touchState: 0,
-             canvas,
-             locateFile(path) {
-                 if (path.endsWith(".wasm")) {
-                     const wasmPath = `AnimalCrossing.wasm?v=${buildVersion}`;
-                     appendLog(`[Loader] ${path} -> ${wasmPath}`);
-                     return wasmPath;
-                 }
-                 return path;
-             },
-             print(text) {
-                 appendLog(String(text));
-             },
-             printErr(text) {
-                 const message = String(text);
-                 if (!isNoisyRuntimeLog(message)) {
-                     console.error(message);
-                 }
-             },
-             setStatus(text) {
-                 setStatus(text);
-             },
-             preRun: [() => {
-                 ensureDir("/rom");
-                 ensureDir("/save");
-                 ensureDir("/save/card_a");
-                 ensureDir("/save/card_b");
-         
-                 if (typeof IDBFS !== "undefined") {
-                     Module.FS.mount(IDBFS, {}, "/save");
-                     Module.FS.syncfs(true, (error) => {
-                         if (error) {
-                             errorBannerEl.textContent = `Initial save sync failed: ${error}`;
-                             appendLog(`Initial save sync failed: ${error}`);
-                         }
-                         saveReady = true;
-                         setStatus("Runtime ready.");
-                         updateLaunchState();
-                         function maybeAutoLaunch() {
-                          }
-                     });
-                 } else {
-                     appendLog("IDBFS unavailable; saves will not persist across reloads.");
-                     saveReady = true;
-                     updateLaunchState();
-                     maybeAutoLaunch();
-                 }
-             }],
-             onRuntimeInitialized() {
-                 runtimeReady = true;
-                 if (!saveReady) {
-                     setStatus("Preparing save storage...");
-                 } else {
-                     setStatus("Runtime ready.");
-                 }
-                 updateLaunchState();
-                 maybeAutoLaunch();
-             },
-             onAbort(reason) {
-                 errorBannerEl.textContent = String(reason);
-                 appendLog(`Aborted: ${reason}`);
-                 setStatus("Runtime aborted.");
-                 gameStarted = false;
-                 updateLaunchState();
-             }
-         };
-         
-         window.Module = Module;
-      </script>
-      <script src="AnimalCrossing.js?v=20260429-msg-stall-fix-1"></script>
-   </body>
+            <div class=tc-button id=tc-dpad aria-label=D-pad data-tc-dpad=1>
+                <svg viewBox="0 0 100 100">
+                    <path d="M36 4 H64 V36 H96 V64 H64 V96 H36 V64 H4 V36 H36 Z" class=tc-bg/>
+                </svg>
+            </div>
+            <div id=tc-dpad-cluster>
+                <div class=tc-button id=tc-dpad-up aria-label=Up data-tc-button=0x0008>
+                    <svg viewBox="0 0 100 100">
+                        <circle cx=50 cy=50 r=46 class=tc-bg/>
+                        <polygon class=tc-arrow points="50,43 60,57 40,57"/>
+                    </svg>
+                </div>
+                <div class=tc-button id=tc-dpad-down aria-label=Down data-tc-button=0x0004>
+                    <svg viewBox="0 0 100 100">
+                        <circle cx=50 cy=50 r=46 class=tc-bg/>
+                        <polygon class=tc-arrow points="50,57 40,43 60,43"/>
+                    </svg>
+                </div>
+                <div class=tc-button id=tc-dpad-left aria-label=Left data-tc-button=0x0001>
+                    <svg viewBox="0 0 100 100">
+                        <circle cx=50 cy=50 r=46 class=tc-bg/>
+                        <polygon class=tc-arrow points="43,50 57,40 57,60"/>
+                    </svg>
+                </div>
+                <div class=tc-button id=tc-dpad-right aria-label=Right data-tc-button=0x0002>
+                    <svg viewBox="0 0 100 100">
+                        <circle cx=50 cy=50 r=46 class=tc-bg/>
+                        <polygon class=tc-arrow points="57,50 43,40 43,60"/>
+                    </svg>
+                </div>
+            </div>
+            <div id=tc-face-cluster>
+                <div class=tc-button id=tc-a aria-label=A data-tc-button=0x0100>
+                    <svg viewBox="0 0 100 100">
+                        <circle cx=50 cy=50 r=46 class=tc-bg/>
+                        <text class=tc-label x=50 y=52>A</text>
+                    </svg>
+                </div>
+                <div class=tc-button id=tc-b aria-label=B data-tc-button=0x0200>
+                    <svg viewBox="0 0 100 100">
+                        <circle cx=50 cy=50 r=46 class=tc-bg/>
+                        <text class=tc-label x=50 y=52>B</text>
+                    </svg>
+                </div>
+                <div class=tc-button id=tc-y aria-label=Y data-tc-button=0x0800>
+                    <svg viewBox="0 0 100 100">
+                        <circle cx=50 cy=50 r=46 class=tc-bg/>
+                        <text class=tc-label x=50 y=52>Y</text>
+                    </svg>
+                </div>
+                <div class=tc-button id=tc-x aria-label=X data-tc-button=0x0400>
+                    <svg viewBox="0 0 100 100">
+                        <circle cx=50 cy=50 r=46 class=tc-bg/>
+                        <text class=tc-label x=50 y=52>X</text>
+                    </svg>
+                </div>
+            </div>
+            <div id=tc-shoulder-row>
+                <div class=tc-button id=tc-l aria-label=L data-tc-button=0x0040>
+                    <svg viewBox="0 0 100 50">
+                        <rect height=46 width=96 x=2 y=2 class=tc-bg rx=14/>
+                        <text class=tc-label x=50 y=27>L</text>
+                    </svg>
+                </div>
+                <div class=tc-button id=tc-start aria-label=Start data-tc-button=0x1000>
+                    <svg viewBox="0 0 100 50">
+                        <rect height=46 width=96 x=2 y=2 class=tc-bg rx=14/>
+                        <text class=tc-label x=50 y=27>START</text>
+                    </svg>
+                </div>
+                <div class=tc-button id=tc-z aria-label=Z data-tc-button=0x0010>
+                    <svg viewBox="0 0 100 50">
+                        <rect height=46 width=96 x=2 y=2 class=tc-bg rx=14/>
+                        <text class=tc-label x=50 y=27>Z</text>
+                    </svg>
+                </div>
+                <div class=tc-button id=tc-r aria-label=R data-tc-button=0x0020>
+                    <svg viewBox="0 0 100 50">
+                        <rect height=46 width=96 x=2 y=2 class=tc-bg rx=14/>
+                        <text class=tc-label x=50 y=27>R</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div id=rom-picker aria-hidden=true>
+            <h1>Slider – A Web Port of Animal Crossing (GameCube)</h1>
+            <div id=webkit-warning style=display:none role=alert>
+                <strong>Warning:</strong>
+                Safari and <b>all</b>
+                iOS browsers have a known memory leak (<a href="https://bugs.webkit.org/show_bug.cgi?id=304810" rel=noopener target=_blank>WebKit bug 304810</a>
+                ) that causes this application's memory usage to climb until the page crashes after about a minute. For a stable session try a Chrome, Edge, or any other Chromium-based browser on a desktop OS or Chrome on Android.
+            </div>
+            <ol id=rom-instructions>
+                <li>Although this is a port and not an emulator, no assets are distributed here. A disc image file of AC is still necessary to play the game for this reason.</li>
+                <li>
+                    Thank you to <a href=https://github.com/ACreTeam/ac-decomp>ACreTeam</a>
+                    and <a href=https://github.com/flyngmt/ACGC-PC-Port>flyngmt</a>
+                    for their work on the decomp and PC port of ACGC, on which this project is built on top of.
+                </li>
+                <li>This software is provided as-is, without warranty of any kind. There's no guarantee it won't corrupt your save data at some point, so export your save data as often as necessary. I have not playtested the entire game, at this stage there are very likely to be places where the game crashes before you have an opportunity to save.</li>
+                <li id=rom-install-item>
+                    This page is a PWA (Progressive Web App) which means you can save it locally on your device for an app-like experience with offline support. <button id=rom-install-btn type=button style=display:none>Install</button>
+                    <span id=rom-install-hint style=display:none>
+                        Tap your browser's <em>Share</em>
+                        menu and choose <strong>Add to Home Screen</strong>
+                        , 
+                    </span>
+                    <span id=rom-install-fallback>Open your browser's menu and press Install / Add to Home Screen.</span>
+                </li>
+            </ol>
+            <label for=rom-file id=rom-drop>
+                <div class=primary>Drag a USA (GAFE01 Rev 0) disc image here, or click to select</div>
+                <div class=secondary>.iso · .gcm · .ciso — stays on your device</div>
+                <input id=rom-file type=file accept=.iso,.gcm,.ciso>
+            </label>
+            <div id=rom-runtime-status></div>
+            <div id=rom-status></div>
+            <div id=rom-saves>
+                <div class=rom-saves-heading>Memory card slots (optional)</div>
+                <div class=rom-saves-help>Import an existing .gci save before booting. Ignore to start a fresh save.</div>
+                <div class=rom-saves-grid>
+                    <div class=rom-saves-slot data-slot=a>
+                        <div class=rom-saves-slot-label>Card A</div>
+                        <div class="checking rom-saves-slot-state">
+                            <svg viewBox="0 0 24 24" aria-hidden=true height=14 width=14 xmlns=http://www.w3.org/2000/svg class=status-spinner>
+                                <rect height=14 width=6 x=1 y=4 fill=currentColor>
+                                    <animate attributeName=opacity begin=0;SVGslota89dAd4w.end-0.25s dur=0.75s fill=freeze values=1;.2 id=SVGslot9ovaHbIP/>
+                                </rect>
+                                <rect height=14 width=6 x=9 y=4 fill=currentColor opacity=.4>
+                                    <animate attributeName=opacity begin=SVGslot9ovaHbIP.begin+0.15s dur=0.75s fill=freeze values=1;.2/>
+                                </rect>
+                                <rect height=14 width=6 x=17 y=4 fill=currentColor opacity=.3>
+                                    <animate attributeName=opacity begin=SVGslot9ovaHbIP.begin+0.3s dur=0.75s fill=freeze values=1;.2 id=SVGslota89dAd4w/>
+                                </rect>
+                            </svg>
+                            <span>Checking…</span>
+                        </div>
+                        <div class=rom-saves-slot-actions>
+                            <button id=rom-import-a type=button style=display:none class=rom-saves-btn>Import…</button>
+                            <button id=rom-export-a type=button style=display:none class=rom-saves-btn>Export</button>
+                            <button id=rom-remove-a type=button style=display:none class="rom-saves-btn rom-saves-btn-secondary">Delete</button>
+                        </div>
+                    </div>
+                    <div class=rom-saves-slot data-slot=b>
+                        <div class=rom-saves-slot-label>Card B</div>
+                        <div class="checking rom-saves-slot-state">
+                            <svg viewBox="0 0 24 24" aria-hidden=true height=14 width=14 xmlns=http://www.w3.org/2000/svg class=status-spinner>
+                                <rect height=14 width=6 x=1 y=4 fill=currentColor>
+                                    <animate attributeName=opacity begin=0;SVGslota89dAd4w.end-0.25s dur=0.75s fill=freeze values=1;.2 id=SVGslot9ovaHbIP/>
+                                </rect>
+                                <rect height=14 width=6 x=9 y=4 fill=currentColor opacity=.4>
+                                    <animate attributeName=opacity begin=SVGslot9ovaHbIP.begin+0.15s dur=0.75s fill=freeze values=1;.2/>
+                                </rect>
+                                <rect height=14 width=6 x=17 y=4 fill=currentColor opacity=.3>
+                                    <animate attributeName=opacity begin=SVGslot9ovaHbIP.begin+0.3s dur=0.75s fill=freeze values=1;.2 id=SVGslota89dAd4w/>
+                                </rect>
+                            </svg>
+                            <span>Checking…</span>
+                        </div>
+                        <div class=rom-saves-slot-actions>
+                            <button id=rom-import-b type=button style=display:none class=rom-saves-btn>Import…</button>
+                            <button id=rom-export-b type=button style=display:none class=rom-saves-btn>Export</button>
+                            <button id=rom-remove-b type=button style=display:none class="rom-saves-btn rom-saves-btn-secondary">Delete</button>
+                        </div>
+                    </div>
+                </div>
+                <div class=rom-saves-status id=rom-saves-status></div>
+                <input id=rom-saves-file type=file accept=.gci style=display:none>
+            </div>
+            <button id=rom-start type=button disabled>Start</button>
+        </div>
+        <button id=tc-style-swap type=button aria-label="Toggle touch controls" title="Toggle touch controls (simplified ↔ full)">
+            <svg viewBox="0 0 24 24" aria-hidden=true height=20 width=20 xmlns=http://www.w3.org/2000/svg>
+                <path d="M11.146 15.854a1.207 1.207 0 0 1 1.708 0l1.56 1.56A2 2 0 0 1 15 18.828V21a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-2.172a2 2 0 0 1 .586-1.414zM18.828 15a2 2 0 0 1-1.414-.586l-1.56-1.56a1.207 1.207 0 0 1 0-1.708l1.56-1.56A2 2 0 0 1 18.828 9H21a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1zm-12.242-.586A2 2 0 0 1 5.172 15H3a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h2.172a2 2 0 0 1 1.414.586l1.56 1.56a1.207 1.207 0 0 1 0 1.708zM9 3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2.172a2 2 0 0 1-.586 1.414l-1.56 1.56a1.207 1.207 0 0 1-1.708 0l-1.56-1.56A2 2 0 0 1 9 5.172z" fill=none stroke=currentColor stroke-linecap=round stroke-linejoin=round stroke-width=2/>
+            </svg>
+        </button>
+        <button id=audio-toggle type=button aria-label="Toggle audio" title="Mute / unmute audio">
+            <svg viewBox="0 0 24 24" aria-hidden=true height=20 width=20 xmlns=http://www.w3.org/2000/svg class=audio-icon-on>
+                <path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298zM16 9a5 5 0 0 1 0 6m3.364 3.364a9 9 0 0 0 0-12.728" fill=none stroke=currentColor stroke-linecap=round stroke-linejoin=round stroke-width=2/>
+            </svg>
+            <svg viewBox="0 0 24 24" aria-hidden=true height=20 width=20 xmlns=http://www.w3.org/2000/svg class=audio-icon-off>
+                <path d="M16 9a5 5 0 0 1 .95 2.293m2.414-5.657a9 9 0 0 1 1.889 9.96M2 2l20 20M7 7l-.587.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298V11M9.828 4.172A.686.686 0 0 1 11 4.657v.686" fill=none stroke=currentColor stroke-linecap=round stroke-linejoin=round stroke-width=2/>
+            </svg>
+        </button>
+        <button id=fullscreen-toggle type=button aria-label="Toggle fullscreen" title="Enter fullscreen">
+            <svg viewBox="0 0 24 24" aria-hidden=true height=20 width=20 xmlns=http://www.w3.org/2000/svg class=fs-icon-expand>
+                <path d="m15 15l6 6M15 9l6-6m0 13v5h-5m5-13V3h-5M3 16v5h5m-5 0l6-6M3 8V3h5m1 6L3 3" fill=none stroke=currentColor stroke-linecap=round stroke-linejoin=round stroke-width=2/>
+            </svg>
+            <svg viewBox="0 0 24 24" aria-hidden=true height=20 width=20 xmlns=http://www.w3.org/2000/svg class=fs-icon-collapse>
+                <path d="m15 15l6 6m-6-6v4.8m0-4.8h4.8M9 19.8V15m0 0H4.2M9 15l-6 6M15 4.2V9m0 0h4.8M15 9l6-6M9 4.2V9m0 0H4.2M9 9L3 3" fill=none stroke=currentColor stroke-linecap=round stroke-linejoin=round stroke-width=2/>
+            </svg>
+        </button>
+        <button id=settings-gear type=button aria-label=Settings title="Open settings">
+            <svg viewBox="0 0 24 24" aria-hidden=true height=20 width=20 xmlns=http://www.w3.org/2000/svg>
+                <g fill=none stroke=currentColor stroke-linecap=round stroke-linejoin=round stroke-width=2>
+                    <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0a2.34 2.34 0 0 0 3.319 1.915a2.34 2.34 0 0 1 2.33 4.033a2.34 2.34 0 0 0 0 3.831a2.34 2.34 0 0 1-2.33 4.033a2.34 2.34 0 0 0-3.319 1.915a2.34 2.34 0 0 1-4.659 0a2.34 2.34 0 0 0-3.32-1.915a2.34 2.34 0 0 1-2.33-4.033a2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/>
+                    <circle cx=12 cy=12 r=3/>
+                </g>
+            </svg>
+        </button>
+        <dialog aria-labelledby=settings-title id=settings-menu>
+            <div class=menu-body>
+                <h2 id=settings-title>Settings</h2>
+                <h3>Saves</h3>
+                <div class=rom-saves-grid id=settings-saves>
+                    <div class=rom-saves-slot data-slot=a>
+                        <div class=rom-saves-slot-label>Card A</div>
+                        <div class="checking rom-saves-slot-state">
+                            <svg viewBox="0 0 24 24" aria-hidden=true height=14 width=14 xmlns=http://www.w3.org/2000/svg class=status-spinner>
+                                <rect height=14 width=6 x=1 y=4 fill=currentColor>
+                                    <animate attributeName=opacity begin=0;SVGslota89dAd4w.end-0.25s dur=0.75s fill=freeze values=1;.2 id=SVGslot9ovaHbIP/>
+                                </rect>
+                                <rect height=14 width=6 x=9 y=4 fill=currentColor opacity=.4>
+                                    <animate attributeName=opacity begin=SVGslot9ovaHbIP.begin+0.15s dur=0.75s fill=freeze values=1;.2/>
+                                </rect>
+                                <rect height=14 width=6 x=17 y=4 fill=currentColor opacity=.3>
+                                    <animate attributeName=opacity begin=SVGslot9ovaHbIP.begin+0.3s dur=0.75s fill=freeze values=1;.2 id=SVGslota89dAd4w/>
+                                </rect>
+                            </svg>
+                            <span>Checking…</span>
+                        </div>
+                        <div class=rom-saves-slot-actions>
+                            <button id=settings-import-a type=button style=display:none class=rom-saves-btn>Import…</button>
+                            <button id=settings-export-a type=button style=display:none class=rom-saves-btn>Export</button>
+                            <button id=settings-remove-a type=button style=display:none class="rom-saves-btn rom-saves-btn-secondary">Delete</button>
+                        </div>
+                    </div>
+                    <div class=rom-saves-slot data-slot=b>
+                        <div class=rom-saves-slot-label>Card B</div>
+                        <div class="checking rom-saves-slot-state">
+                            <svg viewBox="0 0 24 24" aria-hidden=true height=14 width=14 xmlns=http://www.w3.org/2000/svg class=status-spinner>
+                                <rect height=14 width=6 x=1 y=4 fill=currentColor>
+                                    <animate attributeName=opacity begin=0;SVGslota89dAd4w.end-0.25s dur=0.75s fill=freeze values=1;.2 id=SVGslot9ovaHbIP/>
+                                </rect>
+                                <rect height=14 width=6 x=9 y=4 fill=currentColor opacity=.4>
+                                    <animate attributeName=opacity begin=SVGslot9ovaHbIP.begin+0.15s dur=0.75s fill=freeze values=1;.2/>
+                                </rect>
+                                <rect height=14 width=6 x=17 y=4 fill=currentColor opacity=.3>
+                                    <animate attributeName=opacity begin=SVGslot9ovaHbIP.begin+0.3s dur=0.75s fill=freeze values=1;.2 id=SVGslota89dAd4w/>
+                                </rect>
+                            </svg>
+                            <span>Checking…</span>
+                        </div>
+                        <div class=rom-saves-slot-actions>
+                            <button id=settings-import-b type=button style=display:none class=rom-saves-btn>Import…</button>
+                            <button id=settings-export-b type=button style=display:none class=rom-saves-btn>Export</button>
+                            <button id=settings-remove-b type=button style=display:none class="rom-saves-btn rom-saves-btn-secondary">Delete</button>
+                        </div>
+                    </div>
+                </div>
+                <div class=rom-saves-status id=save-status></div>
+                <input id=import-file type=file accept=.gci style=display:none>
+                <div id=settings-install-section style=display:none>
+                    <h3>Install</h3>
+                    <p class=settings-install-help>Save this game to your device for an app-like experience with offline support.</p>
+                    <button id=settings-install-btn type=button>Install app</button>
+                </div>
+                <h3>Touch Controls</h3>
+                <div class=row>
+                    <label for=tc-opacity-range>Opacity</label>
+                    <input id=tc-opacity-range type=range max=80 min=10 step=5>
+                    <span id=tc-opacity-value style=opacity:.7;font-variant-numeric:tabular-nums;min-width:3em;text-align:right></span>
+                </div>
+                <h3>Control Assignments</h3>
+                <table class=controls>
+                    <thead>
+                        <tr>
+                            <th>GameCube</th>
+                            <th>Keyboard</th>
+                            <th>Gamepad</th>
+                        </tr>
+                    </thead>
+                    <tbody id=controls-body></tbody>
+                </table>
+            </div>
+            <div class=menu-footer>
+                <button id=btn-close-menu type=button>Close</button>
+            </div>
+        </dialog>
+        <script>
+            var statusEl = document.getElementById("status")
+              , progressEl = document.getElementById("progress");
+            !function() {
+                var e = navigator.userAgent
+                  , t = /iPad|iPhone|iPod/.test(e)
+                  , n = "MacIntel" === navigator.platform && navigator.maxTouchPoints > 1
+                  , i = /Safari/.test(e) && !/Chrome|CriOS|FxiOS|EdgiOS|Edg\//.test(e);
+                if (t || n || i) {
+                    var o = document.getElementById("webkit-warning");
+                    o && (o.style.display = "")
+                }
+            }(),
+            function e() {
+                requestAnimationFrame(e)
+            }();
+            var MAX_CANVAS_DIM = (_isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) ? 720 : 1920;
+            function _viewportSize() {
+                var e = window.visualViewport;
+                return e && e.width > 0 && e.height > 0 ? {
+                    w: Math.round(e.width),
+                    h: Math.round(e.height)
+                } : {
+                    w: window.innerWidth,
+                    h: window.innerHeight
+                }
+            }
+            var _isMobile, FIXED_CANVAS_W = (_isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) ? 720 : 1920, FIXED_CANVAS_H = _isMobile ? 540 : 1440;
+            function initCanvasSize() {
+                var e = document.getElementById("canvas");
+                e.width === FIXED_CANVAS_W && e.height === FIXED_CANVAS_H || (e.width = FIXED_CANVAS_W,
+                e.height = FIXED_CANVAS_H)
+            }
+            function resizeCanvasToViewport() {}
+            initCanvasSize(),
+            window.addEventListener("resize", resizeCanvasToViewport),
+            window.addEventListener("orientationchange", (function() {
+                requestAnimationFrame(resizeCanvasToViewport),
+                setTimeout(resizeCanvasToViewport, 100),
+                setTimeout(resizeCanvasToViewport, 400)
+            }
+            )),
+            window.visualViewport && window.visualViewport.addEventListener("resize", resizeCanvasToViewport),
+            window.addEventListener("load", resizeCanvasToViewport);
+            var Module = {
+                canvas: function() {
+                    var e = document.getElementById("canvas");
+                    return e.addEventListener("webglcontextlost", (function(e) {
+                        alert("WebGL context lost. Please reload."),
+                        e.preventDefault()
+                    }
+                    ), !1),
+                    e
+                }(),
+                setStatus: function(e) {
+                    if (!e)
+                        return statusEl.style.display = "none",
+                        void (progressEl.style.width = "0%");
+                    statusEl.textContent = e;
+                    var t = e.match(/\((\d+(\.\d+)?)\/(\d+)\)/);
+                    if (t) {
+                        var n = parseFloat(t[1]) / parseFloat(t[3]) * 100;
+                        progressEl.style.width = n + "%"
+                    } else
+                        progressEl.style.width = "100%"
+                },
+                print: function(e) {
+                    console.log(e)
+                },
+                printErr: function(e) {
+                    console.warn(e)
+                },
+                onRuntimeInitialized: function() {
+                    Module.setStatus(""),
+                    document.getElementById("canvas").focus()
+                }
+            };
+            window.onerror = function(e) {
+                Module.setStatus("error — check console"),
+                console.error(e)
+            }
+            ;
+            var pickerEl = document.getElementById("rom-picker")
+              , dropEl = document.getElementById("rom-drop")
+              , fileInput = document.getElementById("rom-file")
+              , statusBox = document.getElementById("rom-status")
+              , runtimeStatusBox = document.getElementById("rom-runtime-status");
+            function _statusKindClass(e) {
+                return !0 === e || "error" === e ? "error" : "ok" === e ? "ok" : "loading" === e ? "loading" : ""
+            }
+            var _STATUS_SPINNER_SVG = '<svg class="status-spinner" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><rect width="6" height="14" x="1"  y="4" fill="currentColor"><animate id="SVG9ovaHbIP" fill="freeze" attributeName="opacity" begin="0;SVGa89dAd4w.end-0.25s" dur="0.75s" values="1;.2"/></rect><rect width="6" height="14" x="9"  y="4" fill="currentColor" opacity=".4"><animate fill="freeze" attributeName="opacity" begin="SVG9ovaHbIP.begin+0.15s" dur="0.75s" values="1;.2"/></rect><rect width="6" height="14" x="17" y="4" fill="currentColor" opacity=".3"><animate id="SVGa89dAd4w" fill="freeze" attributeName="opacity" begin="SVG9ovaHbIP.begin+0.3s" dur="0.75s" values="1;.2"/></rect></svg>';
+            function _renderStatus(e, t, n) {
+                e && (e.className = _statusKindClass(n),
+                "loading" === n ? e.innerHTML = _STATUS_SPINNER_SVG + '<span class="status-text">' + (t || "") + "</span>" : e.textContent = t || "")
+            }
+            function setRuntimeStatus(e, t) {
+                _renderStatus(runtimeStatusBox, e, t)
+            }
+            function setRomStatus(e, t) {
+                _renderStatus(statusBox, e, t)
+            }
+            function showRomPicker() {
+                pickerEl.classList.add("visible"),
+                pickerEl.setAttribute("aria-hidden", "false"),
+                refreshRomStatus(),
+                "function" == typeof window._onPickerShow && window._onPickerShow(),
+                updateGearVisibility()
+            }
+            function hideRomPicker() {
+                pickerEl.classList.remove("visible"),
+                pickerEl.setAttribute("aria-hidden", "true"),
+                updateGearVisibility()
+            }
+            function updateGearVisibility() {
+                var e = document.getElementById("settings-gear")
+                  , t = document.getElementById("fullscreen-toggle")
+                  , n = document.getElementById("audio-toggle")
+                  , i = document.getElementById("tc-style-swap")
+                  , o = _runtimeReady && !pickerEl.classList.contains("visible");
+                e && (e.style.display = o ? "flex" : "none"),
+                t && (t.style.display = o && _fullscreenAvailable() ? "flex" : "none"),
+                n && (n.style.display = o ? "flex" : "none"),
+                i && (i.style.display = o ? "flex" : "none")
+            }
+            function updateAudioToggleIcon() {
+                var e = document.getElementById("audio-toggle");
+                e && e.classList.toggle("is-muted", !(!_settings || !_settings.muteAudio))
+            }
+            function _fullscreenAvailable() {
+                var e = document.documentElement;
+                return !!(e.requestFullscreen || e.webkitRequestFullscreen || e.mozRequestFullScreen || e.msRequestFullscreen)
+            }
+            function _isFullscreenActive() {
+                return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement)
+            }
+            function toggleFullscreen() {
+                if (_isFullscreenActive()) {
+                    var e = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+                    try {
+                        (i = e && e.call(document)) && "function" == typeof i.catch && i.catch((function() {}
+                        ))
+                    } catch (e) {}
+                } else {
+                    var t = document.documentElement
+                      , n = t.requestFullscreen || t.webkitRequestFullscreen || t.mozRequestFullScreen || t.msRequestFullscreen;
+                    try {
+                        var i;
+                        (i = n && n.call(t)) && "function" == typeof i.catch && i.catch((function() {}
+                        ))
+                    } catch (e) {}
+                }
+            }
+            function _syncFullscreenIcon() {
+                var e = document.getElementById("fullscreen-toggle");
+                if (e) {
+                    var t = _isFullscreenActive();
+                    e.classList.toggle("is-fullscreen", t),
+                    e.setAttribute("aria-label", t ? "Exit fullscreen" : "Enter fullscreen"),
+                    e.title = t ? "Exit fullscreen" : "Fullscreen"
+                }
+            }
+            function refreshRomStatus() {
+                if ("undefined" == typeof FS ? setRuntimeStatus("Loading runtime…", "loading") : setRuntimeStatus("Runtime ready.", "ok"),
+                "undefined" != typeof FS && Module && Module.__rom_ready) {
+                    try {
+                        var e = FS.stat("/orig/user-rom.iso");
+                        setRomDropVisible(!1),
+                        setRomStatus("ROM ready (" + formatBytes(0 | e.size) + ")", "ok"),
+                        setStartEnabled(!0)
+                    } catch (e) {
+                        setRomDropVisible(!0),
+                        setRomStatus("No ROM imported. Drop one above to begin."),
+                        setStartEnabled(!1)
+                    }
+                } else
+                    statusBox.textContent || setRomStatus("Checking for ROM…", "loading")
+            }
+            function setRomDropVisible(e) {
+                dropEl && (dropEl.style.display = e ? "flex" : "none")
+            }
+            document.getElementById("fullscreen-toggle").addEventListener("click", toggleFullscreen),
+            ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"].forEach((function(e) {
+                document.addEventListener(e, _syncFullscreenIcon)
+            }
+            )),
+            _syncFullscreenIcon(),
+            window.showRomPicker = showRomPicker,
+            showRomPicker(),
+            function() {
+                if ("undefined" != typeof indexedDB) {
+                    var e;
+                    try {
+                        e = indexedDB.open("EM_FS_/orig")
+                    } catch (e) {
+                        return
+                    }
+                    e.onerror = function() {}
+                    ,
+                    e.onsuccess = function() {
+                        var t = e.result;
+                        try {
+                            if (!t.objectStoreNames.contains("FILE_DATA"))
+                                return void t.close();
+                            var n = t.transaction(["FILE_DATA"], "readonly").objectStore("FILE_DATA").get("/orig/user-rom.iso");
+                            n.onsuccess = function() {
+                                var e = n.result;
+                                if (e && e.contents && !_romImported) {
+                                    var i = e.contents.byteLength || e.contents.length || 0;
+                                    setRomDropVisible(!1),
+                                    setRomStatus("ROM ready (" + formatBytes(i) + ")", "ok"),
+                                    setStartEnabled(!0)
+                                }
+                                t.close()
+                            }
+                            ,
+                            n.onerror = function() {
+                                t.close()
+                            }
+                        } catch (e) {
+                            try {
+                                t.close()
+                            } catch (e) {}
+                        }
+                    }
+                }
+            }();
+            var SUPPORTED_GAME_ID = "GAFE01"
+              , SUPPORTED_REVISION = 0
+              , _romImported = !1
+              , startBtn = document.getElementById("rom-start");
+            function setStartEnabled(e) {
+                _romImported = !!e,
+                startBtn && (startBtn.disabled = !_romImported)
+            }
+            function formatBytes(e) {
+                return e >= 1073741824 ? (e / 1024 / 1024 / 1024).toFixed(2) + " GB" : e >= 1048576 ? (e / 1024 / 1024).toFixed(1) + " MB" : e >= 1024 ? (e / 1024).toFixed(1) + " KB" : e + " B"
+            }
+            async function handleSelectedFile(e) {
+                if (e)
+                    try {
+                        setRomStatus("Reading header…");
+                        var t = await window.romImport.readSlice(e, 0, 8)
+                          , n = window.romImport.isCisoFile(t)
+                          , i = n ? window.romImport.CISO_HEADER_SIZE : 0
+                          , o = await window.romImport.readSlice(e, i, 32);
+                        if (194 !== o[28] || 51 !== o[29] || 159 !== o[30] || 61 !== o[31])
+                            return setRomStatus("That file isn’t a recognized GameCube disc image. Expected an Animal Crossing .iso/.gcm/.ciso. Please try again.", !0),
+                            void setStartEnabled(!1);
+                        for (var r = "", a = 0; a < 6; a++)
+                            r += String.fromCharCode(o[a]);
+                        var s, d = o[7];
+                        if (r !== SUPPORTED_GAME_ID || d !== SUPPORTED_REVISION)
+                            return setRomStatus("Unsupported version: " + r + " Rev " + d + ". This port supports " + SUPPORTED_GAME_ID + " Rev " + SUPPORTED_REVISION + " (Animal Crossing, USA) only.", !0),
+                            void setStartEnabled(!1);
+                        n ? (setRomStatus("Reading file…"),
+                        s = new Uint8Array(await e.arrayBuffer())) : (setRomStatus("Compressing ISO → CISO… 0%"),
+                        s = await window.romImport.isoToCiso(e, (function(e, t) {
+                            setRomStatus("Compressing ISO → CISO… " + Math.round(e / t * 100) + "%")
+                        }
+                        )));
+                        try {
+                            FS.writeFile("/orig/user-rom.iso", s)
+                        } catch (e) {
+                            return setRomStatus("Write failed: " + (e && e.message || e), !0),
+                            setStartEnabled(!1),
+                            void console.error("[rom] FS.writeFile failed", e)
+                        }
+                        setRomStatus("Saving to browser storage…"),
+                        FS.syncfs(!1, (function(t) {
+                            if (t) {
+                                var n = String(t && t.message || t);
+                                return setRomStatus(n = /quota/i.test(n) ? "Browser storage is full. Clear site data for this page (Settings → Privacy → Clear site data) and try again. The compressed ROM is " + formatBytes(s.byteLength) + "." : "Persist failed: " + n, !0),
+                                setStartEnabled(!1),
+                                void console.error("[rom] FS.syncfs failed", t)
+                            }
+                            setRomStatus("ROM ready: " + (e.name || "user-rom.iso") + " (" + formatBytes(s.byteLength) + ")", "ok"),
+                            setStartEnabled(!0)
+                        }
+                        ))
+                    } catch (e) {
+                        setRomStatus("Read failed: " + (e && e.message || e), !0),
+                        setStartEnabled(!1),
+                        console.error("[rom] handleSelectedFile failed", e)
+                    }
+            }
+            function showLoadingOverlay() {
+                var e = document.getElementById("loading-overlay");
+                if (e) {
+                    e.classList.add("visible");
+                    var t = performance.now()
+                      , n = t
+                      , i = 0;
+                    !function o(r) {
+                        r - n < 33 ? i++ : i = 0,
+                        n = r,
+                        i >= 5 || r - t > 8e3 ? e.classList.remove("visible") : requestAnimationFrame(o)
+                    }(t)
+                }
+            }
+            function isMobileLike() {
+                try {
+                    return window.matchMedia("(hover: none) and (pointer: coarse)").matches
+                } catch (e) {
+                    return !1
+                }
+            }
+            startBtn && startBtn.addEventListener("click", (function() {
+                _romImported && (setRomStatus("Loading…"),
+                Module.__rom_uploaded = 1,
+                hideRomPicker(),
+                showLoadingOverlay(),
+                requestPageFullscreen(),
+                requestScreenWakeLock())
+            }
+            ));
+            var _wakeLock = null;
+            function requestScreenWakeLock() {
+                navigator.wakeLock && !_wakeLock && navigator.wakeLock.request("screen").then((function(e) {
+                    _wakeLock = e,
+                    e.addEventListener("release", (function() {
+                        _wakeLock = null
+                    }
+                    ))
+                }
+                )).catch((function() {}
+                ))
+            }
+            function requestPageFullscreen() {
+                if (isMobileLike())
+                    try {
+                        var e = document.documentElement
+                          , t = e.requestFullscreen || e.webkitRequestFullscreen || e.mozRequestFullScreen || e.msRequestFullscreen;
+                        if (t) {
+                            var n = t.call(e);
+                            n && "function" == typeof n.catch && n.catch((function() {}
+                            ))
+                        }
+                    } catch (e) {}
+            }
+            document.addEventListener("visibilitychange", (function() {
+                "visible" === document.visibilityState && requestScreenWakeLock()
+            }
+            )),
+            fileInput.addEventListener("change", (function(e) {
+                handleSelectedFile(e.target.files && e.target.files[0]),
+                e.target.value = ""
+            }
+            )),
+            ["dragenter", "dragover"].forEach((function(e) {
+                dropEl.addEventListener(e, (function(e) {
+                    e.preventDefault(),
+                    e.stopPropagation(),
+                    dropEl.classList.add("dragging")
+                }
+                ))
+            }
+            )),
+            ["dragleave", "drop"].forEach((function(e) {
+                dropEl.addEventListener(e, (function(e) {
+                    e.preventDefault(),
+                    e.stopPropagation(),
+                    dropEl.classList.remove("dragging")
+                }
+                ))
+            }
+            )),
+            dropEl.addEventListener("drop", (function(e) {
+                handleSelectedFile(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0])
+            }
+            )),
+            ["dragover", "drop"].forEach((function(e) {
+                document.addEventListener(e, (function(e) {
+                    pickerEl.classList.contains("visible") && e.preventDefault()
+                }
+                ))
+            }
+            )),
+            "serviceWorker"in navigator && window.addEventListener("load", (function() {
+                navigator.serviceWorker.register("sw.js", {
+                    updateViaCache: "none"
+                }).catch((function(e) {
+                    console.warn("[pwa] service worker registration failed:", e)
+                }
+                ))
+            }
+            )),
+            navigator.storage && navigator.storage.persist && navigator.storage.persist().catch((function() {}
+            )),
+            function() {
+                var e = document.getElementById("rom-install-btn")
+                  , t = document.getElementById("rom-install-hint")
+                  , n = document.getElementById("rom-install-fallback")
+                  , i = document.getElementById("rom-install-item")
+                  , o = document.getElementById("settings-install-section")
+                  , r = document.getElementById("settings-install-btn");
+                if (e && i) {
+                    if (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone)
+                        return i.style.display = "none",
+                        void (o && (o.style.display = "none"));
+                    var a = null
+                      , s = "or open your browser's menu and press Install / Add to Home Screen.";
+                    window.addEventListener("beforeinstallprompt", (function(t) {
+                        t.preventDefault(),
+                        a = t,
+                        e.style.display = "",
+                        n.textContent = s,
+                        o && (o.style.display = "")
+                    }
+                    )),
+                    e.addEventListener("click", c),
+                    r && r.addEventListener("click", c),
+                    window.addEventListener("appinstalled", (function() {
+                        a = null,
+                        i.style.display = "none",
+                        o && (o.style.display = "none")
+                    }
+                    ));
+                    var d = navigator.userAgent || ""
+                      , u = /iPad|iPhone|iPod/.test(d) && !window.MSStream
+                      , l = /^((?!chrome|android).)*safari/i.test(d);
+                    u && l && (t.style.display = "",
+                    n.textContent = s)
+                }
+                function c() {
+                    a && (a.prompt(),
+                    a.userChoice.finally((function() {
+                        a = null,
+                        e.style.display = "none",
+                        o && (o.style.display = "none")
+                    }
+                    )))
+                }
+            }();
+            var _runtimeReady = !1
+              , _origOnRuntimeInitialized = Module.onRuntimeInitialized;
+            function getAudioContext() {
+                try {
+                    return Module && Module.SDL2 && Module.SDL2.audioContext
+                } catch (e) {
+                    return null
+                }
+            }
+            function getAudioOutputNode() {
+                try {
+                    var e = Module && Module.SDL2 && Module.SDL2.audio;
+                    return e && (e.scriptProcessorNode || e.audioWorkletNode) || null
+                } catch (e) {
+                    return null
+                }
+            }
+            function suspendAudio() {
+                var e = getAudioContext();
+                e && "running" === e.state && e.suspend().catch((function() {}
+                ))
+            }
+            function resumeAudio() {
+                var e = getAudioContext();
+                e && "suspended" === e.state && e.resume().catch((function() {}
+                ))
+            }
+            Module.onRuntimeInitialized = function() {
+                if ("function" == typeof _origOnRuntimeInitialized && _origOnRuntimeInitialized(),
+                _runtimeReady = !0,
+                updateGearVisibility(),
+                Module.__rom_ready)
+                    try {
+                        refreshRomStatus()
+                    } catch (e) {}
+                if (Module.__save_ready)
+                    try {
+                        var e = document.getElementById("rom-saves");
+                        e && e._refresh && e._refresh()
+                    } catch (e) {}
+            }
+            ,
+            window._onRomReady = function() {
+                try {
+                    refreshRomStatus()
+                } catch (e) {}
+            }
+            ,
+            window._onSaveReady = function() {
+                try {
+                    var e = document.getElementById("rom-saves");
+                    e && e._refresh && e._refresh()
+                } catch (e) {}
+            }
+            ,
+            window.addEventListener("beforeunload", (function(e) {
+                if (_runtimeReady && !pickerEl.classList.contains("visible"))
+                    return e.preventDefault(),
+                    e.returnValue = "",
+                    ""
+            }
+            )),
+            document.addEventListener("visibilitychange", (function() {
+                document.hidden ? suspendAudio() : resumeAudio()
+            }
+            ));
+            var SETTINGS_KEY = "slider-settings"
+              , _settings = {
+                muteAudio: !1
+            };
+            function loadSettings() {
+                try {
+                    var e = localStorage.getItem(SETTINGS_KEY);
+                    if (!e)
+                        return;
+                    var t = JSON.parse(e);
+                    t && "object" == typeof t && "boolean" == typeof t.muteAudio && (_settings.muteAudio = t.muteAudio)
+                } catch (e) {}
+            }
+            function saveSettings(e) {
+                try {
+                    e && "object" == typeof e && Object.assign(_settings, e),
+                    localStorage.setItem(SETTINGS_KEY, JSON.stringify(_settings))
+                } catch (e) {}
+            }
+            loadSettings();
+            var _audioChain = {
+                sdl: null,
+                gain: null,
+                connected: !1
+            };
+            function _wireAudioGainNow() {
+                if (_audioChain.connected)
+                    return !0;
+                var e = getAudioContext()
+                  , t = getAudioOutputNode();
+                if (!e || !t)
+                    return !1;
+                try {
+                    var n = e.createGain();
+                    return n.gain.value = _settings.muteAudio ? 0 : 1,
+                    t.disconnect(),
+                    t.connect(n),
+                    n.connect(e.destination),
+                    _audioChain.sdl = t,
+                    _audioChain.gain = n,
+                    _audioChain.connected = !0,
+                    !0
+                } catch (e) {
+                    return console.warn("[audio] gain wire failed:", e && e.message),
+                    !1
+                }
+            }
+            function _tryAudioWireOnGesture() {
+                _wireAudioGainNow() && (window.removeEventListener("pointerdown", _tryAudioWireOnGesture, !0),
+                window.removeEventListener("keydown", _tryAudioWireOnGesture, !0),
+                window.removeEventListener("touchstart", _tryAudioWireOnGesture, !0))
+            }
+            function setAudioMuted(e) {
+                _settings.muteAudio = !!e,
+                saveSettings({
+                    muteAudio: _settings.muteAudio
+                }),
+                _audioChain.gain && (_audioChain.gain.gain.value = e ? 0 : 1),
+                updateAudioToggleIcon()
+            }
+            window.addEventListener("pointerdown", _tryAudioWireOnGesture, !0),
+            window.addEventListener("keydown", _tryAudioWireOnGesture, !0),
+            window.addEventListener("touchstart", _tryAudioWireOnGesture, !0),
+            function() {
+                var e = document.getElementById("audio-toggle");
+                e && (updateAudioToggleIcon(),
+                e.addEventListener("click", (function() {
+                    setAudioMuted(!_settings.muteAudio)
+                }
+                )))
+            }();
+            var _audioConnections = [];
+            function disconnectAudio() {
+                if (!(_audioConnections.length > 0)) {
+                    var e = getAudioContext();
+                    if (e) {
+                        var t = _audioChain.gain || getAudioOutputNode();
+                        if (t)
+                            try {
+                                t.disconnect(),
+                                _audioConnections.push([t, e.destination])
+                            } catch (e) {}
+                    }
+                }
+            }
+            function withAudioSilenced(e) {
+                disconnectAudio();
+                try {
+                    return e()
+                } finally {
+                    reconnectAudio()
+                }
+            }
+            function reconnectAudio() {
+                for (; _audioConnections.length; ) {
+                    var e = _audioConnections.pop();
+                    try {
+                        e[0].connect(e[1])
+                    } catch (e) {}
+                }
+                resumeAudio()
+            }
+            window.addEventListener("beforeunload", (function() {
+                disconnectAudio(),
+                suspendAudio()
+            }
+            )),
+            window.addEventListener("focus", reconnectAudio)
+        </script>
+        <script src=shell-rom.js defer></script>
+        <script src=auto-rom.js defer></script>
+        <script src=shell-saves.js defer></script>
+        <script>
+            var menuEl = document.getElementById("settings-menu")
+              , gearEl = document.getElementById("settings-gear")
+              , saveStatus = document.getElementById("save-status")
+              , importInputEl = document.getElementById("import-file");
+            function setSaveStatus(e, t) {
+                saveStatus.textContent = e || "",
+                saveStatus.className = "rom-saves-status" + (t ? " " + t : "")
+            }
+            var SETTINGS_SLOTS = {
+                a: {
+                    dir: "/save/card_a",
+                    el: document.querySelector('#settings-saves .rom-saves-slot[data-slot="a"]'),
+                    btnImport: document.getElementById("settings-import-a"),
+                    btnExport: document.getElementById("settings-export-a"),
+                    btnRemove: document.getElementById("settings-remove-a")
+                },
+                b: {
+                    dir: "/save/card_b",
+                    el: document.querySelector('#settings-saves .rom-saves-slot[data-slot="b"]'),
+                    btnImport: document.getElementById("settings-import-b"),
+                    btnExport: document.getElementById("settings-export-b"),
+                    btnRemove: document.getElementById("settings-remove-b")
+                }
+            };
+            function settingsListGcis(e) {
+                try {
+                    return "undefined" == typeof FS ? [] : FS.readdir(e).filter((function(e) {
+                        return /\.gci$/i.test(e) && "." !== e && ".." !== e
+                    }
+                    ))
+                } catch (e) {
+                    return []
+                }
+            }
+            function refreshSettingsSlot(e) {
+                var t = SETTINGS_SLOTS[e];
+                if (t && t.el) {
+                    var n = settingsListGcis(t.dir)
+                      , a = t.el.querySelector(".rom-saves-slot-state");
+                    t.btnImport && (t.btnImport.style.display = ""),
+                    t.btnRemove && (t.btnRemove.style.display = ""),
+                    n.length > 0 ? (t.el.classList.add("has-data"),
+                    a.textContent = summarizeSlot(e, t.dir, n, "last saved"),
+                    t.btnRemove && (t.btnRemove.disabled = !1),
+                    t.btnExport && (t.btnExport.style.display = "")) : (t.el.classList.remove("has-data"),
+                    a.textContent = "Empty",
+                    t.btnRemove && (t.btnRemove.disabled = !0),
+                    t.btnExport && (t.btnExport.style.display = "none"))
+                }
+            }
+            function refreshSettingsSlots() {
+                refreshSettingsSlot("a"),
+                refreshSettingsSlot("b")
+            }
+            function openMenu() {
+                setSaveStatus(""),
+                refreshSettingsSlots(),
+                "function" == typeof menuEl.showModal ? menuEl.showModal() : menuEl.setAttribute("open", "")
+            }
+            function closeMenu() {
+                "function" == typeof menuEl.close ? menuEl.close() : menuEl.removeAttribute("open"),
+                document.getElementById("canvas").focus()
+            }
+            function settingsExport(e, t) {
+                try {
+                    var n = window.exportSave(e);
+                    n > 0 ? setSaveStatus("Exported " + n + " file" + (1 === n ? "" : "s") + ".", "ok") : setSaveStatus("No save found in slot " + e.toUpperCase() + ".", "error")
+                } catch (e) {
+                    setSaveStatus("Export failed: " + (e && e.message || e), "error")
+                }
+            }
+            function settingsPickImport(e) {
+                var t = SETTINGS_SLOTS[e];
+                if (t && "undefined" != typeof FS) {
+                    var n = settingsListGcis(t.dir);
+                    if (n.length > 0) {
+                        var a = "Card " + e.toUpperCase() + " already has save data (" + summarizeSlot(e, t.dir, n, "last saved") + ").\n\nImporting will overwrite it. Continue?";
+                        if (!withAudioSilenced((function() {
+                            return confirm(a)
+                        }
+                        )))
+                            return
+                    }
+                }
+                importInputEl.value = "",
+                importInputEl.dataset.slot = e,
+                importInputEl.click()
+            }
+            function settingsRemove(e) {
+                var t = SETTINGS_SLOTS[e];
+                if (t && "undefined" != typeof FS) {
+                    var n = settingsListGcis(t.dir);
+                    if (0 !== n.length) {
+                        var a = "Delete " + ("Card " + e.toUpperCase()) + " save data (" + summarizeSlot(e, t.dir, n, "last saved") + ")?\n\nThis cannot be undone.";
+                        withAudioSilenced((function() {
+                            return confirm(a)
+                        }
+                        )) && (n.forEach((function(e) {
+                            try {
+                                FS.unlink(t.dir + "/" + e)
+                            } catch (n) {
+                                console.warn("[settings-saves] unlink failed:", t.dir + "/" + e, n && n.message)
+                            }
+                        }
+                        )),
+                        FS.syncfs(!1, (function(t) {
+                            t ? setSaveStatus("Persist failed: " + t, "error") : (clearStamp(e),
+                            setSaveStatus("Deleted Card " + e.toUpperCase() + " save data.", "ok"),
+                            refreshSettingsSlot(e))
+                        }
+                        )))
+                    }
+                }
+            }
+            updateGearVisibility(),
+            gearEl.addEventListener("click", openMenu),
+            document.getElementById("btn-close-menu").addEventListener("click", closeMenu),
+            menuEl.addEventListener("click", (function(e) {
+                e.target === menuEl && closeMenu()
+            }
+            )),
+            menuEl.addEventListener("close", (function() {
+                document.getElementById("canvas").focus()
+            }
+            )),
+            SETTINGS_SLOTS.a.btnImport.addEventListener("click", (function() {
+                settingsPickImport("a")
+            }
+            )),
+            SETTINGS_SLOTS.b.btnImport.addEventListener("click", (function() {
+                settingsPickImport("b")
+            }
+            )),
+            SETTINGS_SLOTS.a.btnExport.addEventListener("click", (function() {
+                settingsExport("a", this)
+            }
+            )),
+            SETTINGS_SLOTS.b.btnExport.addEventListener("click", (function() {
+                settingsExport("b", this)
+            }
+            )),
+            SETTINGS_SLOTS.a.btnRemove.addEventListener("click", (function() {
+                settingsRemove("a")
+            }
+            )),
+            SETTINGS_SLOTS.b.btnRemove.addEventListener("click", (function() {
+                settingsRemove("b")
+            }
+            )),
+            importInputEl.addEventListener("change", (function() {
+                var e = this.files && this.files[0];
+                if (e) {
+                    var t = this.dataset.slot;
+                    setSaveStatus("Importing to Card " + t.toUpperCase() + "…"),
+                    window.importSave(t, e).then((function(e) {
+                        e ? (stampSave(t),
+                        setSaveStatus("Imported to Card " + t.toUpperCase() + ". Reload to load the save in-game.", "ok")) : setSaveStatus("Import failed — see console for details.", "error"),
+                        refreshSettingsSlot(t)
+                    }
+                    ))
+                }
+            }
+            ));
+            var KEY_MAP = [{
+                gc: "A",
+                keyboard: "Space",
+                gamepad: "A (face)"
+            }, {
+                gc: "B",
+                keyboard: "Left Shift",
+                gamepad: "B (face)"
+            }, {
+                gc: "X",
+                keyboard: "X",
+                gamepad: "X (face)"
+            }, {
+                gc: "Y",
+                keyboard: "Y",
+                gamepad: "Y (face)"
+            }, {
+                gc: "Start",
+                keyboard: "Enter",
+                gamepad: "Start / Back"
+            }, {
+                gc: "Z",
+                keyboard: "Z",
+                gamepad: "R Shoulder / R Trigger"
+            }, {
+                gc: "L",
+                keyboard: "Q",
+                gamepad: "L Trigger"
+            }, {
+                gc: "R",
+                keyboard: "E",
+                gamepad: "R Trigger"
+            }, {
+                gc: "Main Stick",
+                keyboard: "W A S D",
+                gamepad: "Left Stick"
+            }, {
+                gc: "C-Stick",
+                keyboard: "Arrow keys",
+                gamepad: "Right Stick"
+            }, {
+                gc: "D-Pad",
+                keyboard: "I J K L",
+                gamepad: "D-Pad"
+            }];
+            !function() {
+                for (var e = document.getElementById("controls-body"), t = "", n = 0; n < KEY_MAP.length; n++) {
+                    var a = KEY_MAP[n];
+                    t += "<tr><td>" + a.gc + "</td><td>" + a.keyboard + "</td><td>" + a.gamepad + "</td></tr>"
+                }
+                e.innerHTML = t
+            }()
+        </script>
+        <script src=nipplejs.min.js defer onload=window._nippleLoaded&&window._nippleLoaded()></script>
+        <script src=shell-touch.js defer></script>
+        <script src=index.js async></script>
+    </body>
 </html>
