@@ -1,130 +1,134 @@
-<!DOCTYPE html>
-<html lang="en">
+   <!DOCTYPE html>
+   <html lang="en">
 
-<head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Home - Classroom</title>
+   <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Home - Classroom</title>
 
-   <link rel="icon" href="/storage/images/googleclassroom.png" type="image/png">
-   <link href="/storage/css/cursor.css" rel="stylesheet">
+      <link rel="icon" href="/storage/images/googleclassroom.png" type="image/png">
+      <link href="/storage/css/cursor.css" rel="stylesheet">
 
-   <script src="/storage/js/cursor.js"></script>
+      <script src="/storage/js/cursor.js"></script>
 
-   <style>
-      html,
-      body {
-         width: 100%;
-         height: 100%;
-         margin: 0;
-         background: url("/storage/icons/404/background.png") center center / cover no-repeat;
-      }
+      <style>
+         html,
+         body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            background: url("/storage/icons/404/background.png") center center / cover no-repeat;
+         }
 
-      body {
-         font-family: Arial, sans-serif;
-         color: #eeeeee;
-         text-shadow: 0 0 0.8px #111;
-         overflow: hidden;
-         user-select: none;
-      }
+         body {
+            font-family: Arial, sans-serif;
+            color: #eeeeee;
+            text-shadow: 0 0 0.8px #111;
+            overflow: hidden;
+            user-select: none;
+         }
 
-      #start-screen {
-         position: fixed;
-         inset: 0;
-         z-index: 9999;
-         display: flex;
-         align-items: center;
-         justify-content: center;
-         text-align: center;
-      }
+         #start-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+         }
 
-      .card {
-         width: min(520px, calc(100vw - 36px));
-         padding: 34px 28px;
-         border-radius: 22px;
-         border: 1px solid rgba(255, 255, 255, 0.18);
-         background: rgba(0, 0, 0, 0.58);
-         box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
-         backdrop-filter: blur(4px);
-      }
+         .card {
+            width: min(520px, calc(100vw - 36px));
+            padding: 34px 28px;
+            border-radius: 22px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(0, 0, 0, 0.58);
+            box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(4px);
+         }
 
-      h1 {
-         margin: 0 0 12px;
-         font-size: clamp(34px, 6vw, 58px);
-         letter-spacing: -2px;
-      }
+         h1 {
+            margin: 0 0 12px;
+            font-size: clamp(34px, 6vw, 58px);
+            letter-spacing: -2px;
+         }
 
-      p {
-         margin: 0 0 24px;
-         color: #d2d2dc;
-         font-size: clamp(15px, 2vw, 18px);
-         line-height: 1.5;
-      }
+         p {
+            margin: 0 0 24px;
+            color: #d2d2dc;
+            font-size: clamp(15px, 2vw, 18px);
+            line-height: 1.5;
+         }
 
-      #continue-btn {
-         height: 46px;
-         padding: 0 28px;
-         border: 1px solid rgba(255, 255, 255, 0.22);
-         border-radius: 14px;
-         background: rgba(255, 255, 255, 0.92);
-         color: #111;
-         font-size: 15px;
-         font-weight: 700;
-         cursor: pointer;
-      }
+         #continue-btn {
+            height: 46px;
+            padding: 0 28px;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.92);
+            color: #111;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+         }
 
-      #continue-btn:hover {
-         background: white;
-      }
+         #continue-btn:hover {
+            background: white;
+         }
 
-      #game-frame {
-         width: 100%;
-         height: 100%;
-         border: 0;
-         display: none;
-         background: #000;
-      }
-   </style>
-</head>
+         #game-frame {
+            width: 100%;
+            height: 100%;
+            border: 0;
+            display: none;
+            background: #000;
+         }
+      </style>
+   </head>
 
-<body>
-   <main id="start-screen">
-      <section class="card">
-         <h1>⚠️ be warned ⚠️</h1>
-         <p>if the movies don't load, click <strong>server 2</strong> on the movies page</p>
-         <button id="continue-btn" type="button">continue</button>
-      </section>
-   </main>
+   <body>
+      <main id="start-screen">
+         <section class="card">
+            <h1>⚠️ warning ⚠️</h1>
+            <p>if the movies don't load, click <strong>server 2</strong> on the movies page</p>
+            <button id="continue-btn" type="button">continue</button>
+         </section>
+      </main>
 
-   <iframe id="game-frame" allowfullscreen tabindex="0"></iframe>
+      <iframe
+      id="game-frame"
+      allowfullscreen
+      tabindex="0">
+      </iframe>
 
-   <script>
-      const targetUrl = "https://movie-web.click/";
-      const gameFrame = document.getElementById("game-frame");
-      const startScreen = document.getElementById("start-screen");
-      const continueBtn = document.getElementById("continue-btn");
+      <script>
+         const targetUrl = "https://movie-web.click/";
+         const gameFrame = document.getElementById("game-frame");
+         const startScreen = document.getElementById("start-screen");
+         const continueBtn = document.getElementById("continue-btn");
 
-      function loadFrame() {
-         gameFrame.src = "/scramjet/embed.html#" + targetUrl;
-      }
+         function loadFrame() {
+            gameFrame.src = "/scramjet/embed.html#" + targetUrl;
+         }
 
-      continueBtn.addEventListener("click", function () {
-         startScreen.style.display = "none";
-         gameFrame.style.display = "block";
-         loadFrame();
-      });
+         continueBtn.addEventListener("click", function () {
+            startScreen.style.display = "none";
+            gameFrame.style.display = "block";
+            loadFrame();
+         });
 
-      gameFrame.addEventListener("load", function () {
-         gameFrame.focus();
-      });
+         gameFrame.addEventListener("load", function () {
+            gameFrame.focus();
+         });
 
-      gameFrame.addEventListener("click", function () {
-         gameFrame.focus();
-      });
-   </script>
+         gameFrame.addEventListener("click", function () {
+            gameFrame.focus();
+         });
+      </script>
 
-   <script src="/storage/js/settings.js"></script>
-   <script id="cursor-state-fix-js" src="/storage/js/cursor-state-fix.js"></script>
-</body>
+      <script src="/storage/js/settings.js"></script>
+      <script id="cursor-state-fix-js" src="/storage/js/cursor-state-fix.js"></script>
+   </body>
 
-</html>
+   </html>

@@ -1,251 +1,305 @@
+/************************
+ * swium dev
+ * (literally first dev realize, most of the features arent here)
+ * | by VAPOR/created by s16dih
+ ***********************/
 
-const ADBLOCK = {
-    blocked: [
-  "googlevideo.com/videoplayback",
-  "youtube.com/get_video_info",
-  "youtube.com/api/stats/ads",
-  "youtube.com/pagead",
-  "youtube.com/api/stats",
-  "youtube.com/get_midroll",
-  "youtube.com/ptracking",
-  "youtube.com/youtubei/v1/player",
-  "youtube.com/s/player",
-  "youtube.com/api/timedtext",
-  "facebook.com/ads",
-  "facebook.com/tr",
-  "fbcdn.net/ads",
-  "graph.facebook.com/ads",
-  "graph.facebook.com/pixel",
-  "ads-api.twitter.com",
-  "analytics.twitter.com",
-  "twitter.com/i/ads",
-  "ads.yahoo.com",
-  "advertising.com",
-  "adtechus.com",
-  "amazon-adsystem.com",
-  "adnxs.com",
-  "doubleclick.net",
-  "googlesyndication.com",
-  "googleadservices.com",
-  "rubiconproject.com",
-  "pubmatic.com",
-  "criteo.com",
-  "openx.net",
-  "taboola.com",
-  "outbrain.com",
-  "moatads.com",
-  "casalemedia.com",
-  "unityads.unity3d.com",
-  "/ads/",
-  "/adserver/",
-  "/banner/",
-  "/promo/",
-  "/tracking/",
-  "/beacon/",
-  "/metrics/",
-  "adsafeprotected.com",
-  "chartbeat.com",
-  "scorecardresearch.com",
-  "quantserve.com",
-  "krxd.net",
-  "demdex.net"
-]   
+/*
+Examples:
+const CONFIG = {
+	blocked: [
+		block a domain
+		"example.com",
+    subdomains
+		"*.example.com",           blocks any subdomain (a.example.com, foo.bar.example.com, etc.)
+		"tracker.*.example.com",   blocks tracker.us.example.com, tracker.eu.example.com, etc.
+    paths
+		"example.com/ads",         blocks only https://example.com/ads
+		"example.com/ads/*",       blocks any path under /ads
+		"example.com/*.js",        blocks all JS files at root (e.g., /app.js)
+		"example.com/assets/*.png",  blocks only PNG files inside /assets
+    double wildcards
+		"example.com/**",          blocks *all* paths on example.com
+    weird cases
+		"*.example.com/**.gif",    blocks all .gif files on any subdomain
+		"example.com/",            blocks only the main page
+		"example.com/*",           blocks one level deep paths
+	],
 };
+when ur done doing it you have to base64d it before putting it there this is for fi*ters
+*/
+/************************
+ * swium dev
+ * (literally first dev realize, most of the features arent here)
+ * | by VAPOR/created by s16dih
+ ***********************/
 
-function isAdBlocked(url) {
-    const urlStr = url.toString();
-    for (const pattern of ADBLOCK.blocked) {
-        let regexPattern = pattern
-            .replace(/\*/g, '.*')
-            .replace(/\./g, '\\.')
-            .replace(/\?/g, '\\?');
-        const regex = new RegExp('^' + regexPattern + '$', 'i');
-        if (regex.test(urlStr)) {
-            return true;
-        }
-    }
-    return false;
+if (navigator.userAgent.includes("Firefox")) {
+	Object.defineProperty(globalThis, "crossOriginIsolated", {
+		value: true,
+		writable: false,
+	});
 }
 
-const swPath = self.location.pathname;
-const basePath = swPath.substring(0, swPath.lastIndexOf('/') + 1);
-self.basePath = self.basePath || basePath;
+importScripts("./scram/scramjet.all.js");
 
-self.$scramjet = {
-    files: {
-        wasm: "https://cdn.jsdelivr.net/gh/Destroyed12121/Staticsj@main/JS/scramjet.wasm.wasm",
-        sync: "https://cdn.jsdelivr.net/gh/Destroyed12121/Staticsj@main/JS/scramjet.sync.js",
-    }
-};
+self.addEventListener("install", () => {
+	self.skipWaiting();
+});
 
-importScripts("https://cdn.jsdelivr.net/gh/Destroyed12121/Staticsj@main/JS/scramjet.all.js");
-importScripts("https://cdn.jsdelivr.net/npm/@mercuryworkshop/bare-mux/dist/index.js");
+self.addEventListener("activate", (event) => {
+	event.waitUntil(self.clients.claim());
+});
 
 const { ScramjetServiceWorker } = $scramjetLoadWorker();
-const scramjet = new ScramjetServiceWorker({
-    prefix: basePath + "scramjet/"
-});
+const scramjet = new ScramjetServiceWorker();
 
-self.addEventListener('install', (e) => self.skipWaiting());
-self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
-
-// Wisp configuration - receives from script.js via postMessage
-let wispConfig = {
-    wispurl: null,
-    servers: [],
-    autoswitch: true
+const CONFIG = {
+	blocked: [
+		"youtube.com/get_video_info?*adformat=*",
+		"youtube.com/api/stats/ads/*",
+		"youtube.com/pagead/*",
+		".facebook.com/ads/*",
+		".facebook.com/tr/*",
+		".fbcdn.net/ads/*",
+		"graph.facebook.com/ads/*",
+		"ads-api.twitter.com/*",
+		"analytics.twitter.com/*",
+		".twitter.com/i/ads/*",
+		".ads.yahoo.com",
+		".advertising.com",
+		".adtechus.com",
+		".oath.com",
+		".verizonmedia.com",
+		".amazon-adsystem.com",
+		"aax.amazon-adsystem.com/*",
+		"c.amazon-adsystem.com/*",
+		".adnxs.com",
+		".adnxs-simple.com",
+		"ab.adnxs.com/*",
+		".rubiconproject.com",
+		".magnite.com",
+		".pubmatic.com",
+		"ads.pubmatic.com/*",
+		".criteo.com",
+		"bidder.criteo.com/*",
+		"static.criteo.net/*",
+		".openx.net",
+		".openx.com",
+		".indexexchange.com",
+		".casalemedia.com",
+		".adcolony.com",
+		".chartboost.com",
+		".unityads.unity3d.com",
+		".inmobiweb.com",
+		".tapjoy.com",
+		".applovin.com",
+		".vungle.com",
+		".ironsrc.com",
+		".fyber.com",
+		".smaato.net",
+		".supersoniads.com",
+		".startappservice.com",
+		".airpush.com",
+		".outbrain.com",
+		".taboola.com",
+		".revcontent.com",
+		".zedo.com",
+		".mgid.com",
+		"*/ads/*",
+		"*/adserver/*",
+		"*/adclick/*",
+		"*/banner_ads/*",
+		"*/sponsored/*",
+		"*/promotions/*",
+		"*/tracking/ads/*",
+		"*/promo/*",
+		"*/affiliates/*",
+		"*/partnerads/*",
+	],
+	inject: {
+		html: "\x3c!-- pr0x1ed by vapor's static sj --\x3e",
+	},
 };
 
-// Server health tracking for autoswitching
-let serverHealth = new Map();
-let currentServerStartTime = null;
-const MAX_CONSECUTIVE_FAILURES = 2;
-const PING_TIMEOUT = 3000;
+/** @type {{ origin: string, html: string, css: string, js: string } | undefined} */
+let playgroundData;
 
-let resolveConfigReady;
-const configReadyPromise = new Promise(resolve => resolveConfigReady = resolve);
-
-// Ping a wisp server to check if it's responsive
-async function pingServer(url) {
-    return new Promise((resolve) => {
-        const start = Date.now();
-        try {
-            const ws = new WebSocket(url);
-            const timeout = setTimeout(() => {
-                try { ws.close(); } catch {}
-                resolve({ url, success: false, latency: null });
-            }, PING_TIMEOUT);
-
-            ws.onopen = () => {
-                clearTimeout(timeout);
-                const latency = Date.now() - start;
-                try { ws.close(); } catch {}
-                resolve({ url, success: true, latency });
-            };
-
-            ws.onerror = () => {
-                clearTimeout(timeout);
-                try { ws.close(); } catch {}
-                resolve({ url, success: false, latency: null });
-            };
-        } catch {
-            resolve({ url, success: false, latency: null });
-        }
-    });
+/**
+ * @param {string} pattern
+ * @returns {RegExp}
+ */
+function toRegex(pattern) {
+	const escaped = pattern
+		.replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+		.replace(/\*\*/g, "{{DOUBLE_STAR}}")
+		.replace(/\*/g, "[^/]*")
+		.replace(/{{DOUBLE_STAR}}/g, ".*");
+	return new RegExp(`^${escaped}$`);
 }
 
-// Update server health status
-function updateServerHealth(url, success) {
-    const health = serverHealth.get(url) || { consecutiveFailures: 0, successes: 0, lastSuccess: 0 };
-    
-    if (success) {
-        health.consecutiveFailures = 0;
-        health.successes++;
-        health.lastSuccess = Date.now();
-    } else {
-        health.consecutiveFailures++;
-    }
-    
-    serverHealth.set(url, health);
-    return health;
+/**
+ * @param {string} hostname
+ * @param {string} pathname
+ * @returns {boolean}
+ */
+function isBlocked(hostname, pathname) {
+	return CONFIG.blocked.some((pattern) => {
+		if (pattern.startsWith("#")) {
+			pattern = pattern.substring(1);
+		}
+		if (pattern.startsWith("*")) {
+			pattern = pattern.substring(1);
+		}
+
+		if (pattern.includes("/")) {
+			const [hostPattern, ...pathParts] = pattern.split("/");
+			const pathPattern = pathParts.join("/");
+			const hostRegex = toRegex(hostPattern);
+			const pathRegex = toRegex(`/${pathPattern}`);
+			return hostRegex.test(hostname) && pathRegex.test(pathname);
+		}
+		const hostRegex = toRegex(pattern);
+		return hostRegex.test(hostname);
+	});
 }
 
-function switchToServer(url, latency = null) {
-    if (url === wispConfig.wispurl) return;
-    
-    console.log(`SW: Switching from ${wispConfig.wispurl} to ${url}`);
-    wispConfig.wispurl = url;
-    currentServerStartTime = Date.now();
-    
-    // Notify all clients
-    self.clients.matchAll().then(clients => {
-        clients.forEach(client => {
-            client.postMessage({
-                type: 'wispChanged',
-                url: url,
-                name: wispConfig.servers.find(s => s.url === url)?.name || 'Unknown Server',
-                latency: latency
-            });
-        });
-    });
-
+/**
+ * @param {string} html
+ * @returns {string}
+ */
+function inject(html) {
+	return html.replace(/<head[^>]*>/i, (match) => `${match}${CONFIG.inject.html}`);
 }
 
-// Proactively check server health and switch if needed
-async function proactiveServerCheck() {
-    if (!wispConfig.autoswitch || !wispConfig.servers || wispConfig.servers.length === 0) return;
+// this app's own runtime lives under the same path Scramjet uses as its
+// proxy prefix (both are "/scramjet/" by design), so Scramjet's router has
+// to be kept from swallowing requests for the app's own files - otherwise
+// it tries to decode e.g. "baremux/worker.js" as an encoded proxy target
+// and fails. these are the local, non-proxied paths this app actually ships.
+const LOCAL_ASSET_PATHS = new Set(["", "index.html", "newtab.html", "embed.html", "config.js", "sw.js", "favicon.ico"]);
+const LOCAL_ASSET_DIRS = ["styles/", "scripts/", "scram/", "baremux/", "epoxy/"];
 
-    const currentUrl = wispConfig.wispurl;
-    
-    // Ping all servers to get current health status
-    const results = await Promise.all(
-        wispConfig.servers.map(s => pingServer(s.url))
-    );
-
-    // Update health tracking
-    results.forEach(r => updateServerHealth(r.url, r.success));
-
-    // If current server is bad and we have a better option, switch
-    const currentHealth = serverHealth.get(currentUrl);
-    if (currentHealth && currentHealth.consecutiveFailures > 0) {
-        const bestWorking = results
-            .filter(r => r.success && r.url !== currentUrl)
-            .sort((a, b) => a.latency - b.latency)[0];
-
-        if (bestWorking) {
-            switchToServer(bestWorking.url, bestWorking.latency);
-        }
-    }
+/**
+ * @param {URL} url
+ * @returns {boolean}
+ */
+function isLocalAsset(url) {
+	const scopePath = new URL(self.registration.scope).pathname;
+	if (!url.pathname.startsWith(scopePath)) return false;
+	const rel = url.pathname.slice(scopePath.length);
+	return LOCAL_ASSET_PATHS.has(rel) || LOCAL_ASSET_DIRS.some((dir) => rel.startsWith(dir));
 }
 
-self.addEventListener("message", ({ data }) => {
-    if (data.type === "config") {
-        if (data.wispurl) {
-            wispConfig.wispurl = data.wispurl;
-            console.log("SW: Received wispurl", data.wispurl);
-            currentServerStartTime = Date.now();
-        }
-        if (data.servers && data.servers.length > 0) {
-            wispConfig.servers = data.servers;
-            console.log("SW: Received servers", data.servers.length);
-            if (wispConfig.autoswitch) {
-                setTimeout(proactiveServerCheck, 500);
-            }
-        }
-        if (typeof data.autoswitch !== 'undefined') {
-            wispConfig.autoswitch = data.autoswitch;
-            if (wispConfig.autoswitch && wispConfig.servers?.length > 0) {
-                setTimeout(proactiveServerCheck, 500);
-            }
-        }
-        // Resolve config ready when we have at least wispurl
-        if (wispConfig.wispurl && resolveConfigReady) {
-            resolveConfigReady();
-            resolveConfigReady = null;
-        }
-    } else if (data.type === "ping") {
-        pingServer(wispConfig.wispurl).then(result => {
-            self.clients.matchAll().then(clients => {
-                clients.forEach(client => {
-                    client.postMessage({ type: 'pingResult', ...result });
-                });
-            });
-        });
-    }
-});
+/**
+ * fetch() rejects reconstructing a request with mode "navigate" (only the
+ * browser's own navigation algorithm may use it), but otherwise dropping the
+ * original mode breaks legitimately no-cors cross-origin loads (e.g. an
+ * <img> tag pointing at an external favicon service) by forcing them into
+ * strict cors mode instead of the opaque load they're supposed to get.
+ * @param {URL} url
+ * @param {Request} request
+ * @returns {Promise<Response>}
+ */
+function refetch(url, request) {
+	const mode = request.mode === "navigate" ? "same-origin" : request.mode;
+	return fetch(url.href, { mode, credentials: request.credentials });
+}
+
+/**
+ * @param {FetchEvent} event
+ * @returns {Promise<Response>}
+ */
+async function handleRequest(event) {
+	const url = new URL(event.request.url);
+	if (isLocalAsset(url)) {
+		return refetch(url, event.request);
+	}
+
+	await scramjet.loadConfig();
+
+	if (scramjet.route(event)) {
+		let response;
+		try {
+			response = await scramjet.fetch(event);
+		} catch (err) {
+			// this is a real cross-origin proxy target, so falling back to a
+			// plain fetch() can never work here (it would just fail again on
+			// CORS) - report the actual failure instead of masking it.
+			console.error("scramjet: failed to proxy request:", event.request.url, err);
+			return new Response(`Scramjet failed to proxy this request: ${err.message}`, {
+				status: 502,
+				headers: { "content-type": "text/plain" },
+			});
+		}
+
+		const contentType = response.headers.get("content-type") || "";
+
+		if (contentType.includes("text/html")) {
+			const originalText = await response.text();
+			const modifiedHtml = inject(originalText);
+			const encoder = new TextEncoder();
+			const byteLength = encoder.encode(modifiedHtml).length;
+			const newHeaders = new Headers(response.headers);
+			newHeaders.set("content-length", byteLength.toString());
+
+			return new Response(modifiedHtml, {
+				status: response.status,
+				statusText: response.statusText,
+				headers: newHeaders,
+			});
+		}
+
+		return response;
+	}
+
+	return refetch(url, event.request);
+}
 
 self.addEventListener("fetch", (event) => {
-    event.respondWith((async () => {
-        // Check if request URL matches ad blocking patterns
-        if (isAdBlocked(event.request.url)) {
-            console.log("SW: Blocked ad request:", event.request.url);
-            return new Response(new ArrayBuffer(0), { status: 204 });
-        }
+	event.respondWith(handleRequest(event));
+});
 
-        await scramjet.loadConfig();
-        if (scramjet.route(event)) {
-            return scramjet.fetch(event);
-        }
-        return fetch(event.request);
-    })());
+self.addEventListener("message", ({ data }) => {
+	if (data.type === "playgroundData") {
+		playgroundData = data;
+	}
+});
+
+scramjet.addEventListener("request", (e) => {
+	if (isBlocked(e.url.hostname, e.url.pathname)) {
+		e.response = new Response("Site Blocked", { status: 403 });
+		return;
+	}
+
+	if (playgroundData && e.url.href.startsWith(playgroundData.origin)) {
+		const routes = {
+			"/": { content: playgroundData.html, type: "text/html" },
+			"/style.css": { content: playgroundData.css, type: "text/css" },
+			"/script.js": { content: playgroundData.js, type: "application/javascript" },
+		};
+
+		const route = routes[e.url.pathname];
+
+		if (route) {
+			let content = route.content;
+
+			if (route.type === "text/html") {
+				content = inject(content);
+			}
+
+			const headers = { "content-type": route.type };
+			e.response = new Response(content, { headers });
+			e.response.rawHeaders = headers;
+			e.response.rawResponse = {
+				body: e.response.body,
+				headers: headers,
+				status: e.response.status,
+				statusText: e.response.statusText,
+			};
+			e.response.finalURL = e.url.toString();
+		} else {
+			e.response = new Response("empty response", { headers: {} });
+		}
+	}
 });

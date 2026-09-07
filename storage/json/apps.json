@@ -54,11 +54,17 @@
     "title": "copy.sh - v86"
   },
   {
-    "url": "/pages/iframe.html?url=https://play.geforcenow.com/",
-    "img": "/pages/apps/images/geforce.png",
-    "alt": "Geforce",
-    "title": "Geforce NOW"
+    "url": "/pages/pframe.html?url=https://figurestand.workerlo.workers.dev/",
+    "img": "/pages/apps/images/figure.jpg",
+    "alt": "Figure Cloud",
+    "title": "Figure Cloud"
   },
+  {
+    "url": "/pages/pframe.html?url=https://play.geforcenow.com/mall/#/loginwall",
+    "img": "/pages/apps/images/geforce.png",
+    "alt": "Geforce Now",
+    "title": "Geforce NOW"
+  },  
   {
     "url": "/pages/pframe.html?url=https://gauthmath.com/",
     "img": "/pages/apps/images/gauth.png",
@@ -90,12 +96,6 @@
     "title": "Engine Simulator"
   },
   {
-    "url": "/pages/pframe.html?url=https://desmos.com",
-    "img": "/pages/apps/images/desmos.png",
-    "alt": "Desmos",
-    "title": "Desmos"
-  },
-  {
     "url": "/pages/iframe.html?url=/pages/apps/print3r",
     "img": "/pages/apps/images/print.png",
     "alt": "ExtPrint3r",
@@ -122,7 +122,7 @@
   {
     "url": "/pages/pframe.html?url=https://duck.ai",
     "img": "/pages/apps/images/ddgai.png",
-    "alt": "duck.ai",
-    "title": "duck.ai"
+    "alt": "Duck.ai",
+    "title": "Duck.ai"
   }
 ]

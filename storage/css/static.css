@@ -14,7 +14,7 @@ body {
 
 @font-face {
     font-family: 'Title';
-    src: url('/storage/fonts/poek.otf') format('truetype');
+    src: url('/storage/fonts/honfleur.otf') format('truetype');
 }
 
 h1 {
@@ -30,7 +30,7 @@ h1 {
 h {
     margin: 0;
     padding: 0;
-    font-size: 5em;
+    font-size: 6em;
     line-height: 1;
     color: white;
     font-family: 'Title';

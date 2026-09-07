@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -203,6 +203,16 @@ iframe {
 
       gameFrame.addEventListener("click", function () {
          gameFrame.focus();
+      });
+
+      // pressing Escape while fullscreen forces the browser to exit it (no
+      // site can override that), which knocks focus off the iframe with
+      // nothing to bring it back - without this, keyboard input silently
+      // stops working the moment fullscreen is exited via Escape.
+      document.addEventListener("fullscreenchange", function () {
+         if (!document.fullscreenElement) {
+            gameFrame.focus();
+         }
       });
 
       reloadButton.addEventListener("click", reloadFrame);

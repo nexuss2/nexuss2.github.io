@@ -22,83 +22,6 @@
    <link rel="stylesheet" href="./storage/css/navigation.css">
 
    <style>
-#clear-site-data {
-   position: fixed;
-   top: 20px;
-   right: 20px;
-   z-index: 99999;
-   padding: 10px 16px;
-   cursor: pointer;
-}
-</style>
-
-   <button id="clear-site-data" type="button">
-click to fix proxy</button>
-
-<script>
-document.getElementById("clear-site-data").addEventListener("click", async function () {
-   const confirmed = confirm(
-      "continue"
-   );
-
-   if (!confirmed) return;
-
-   try {
-      // Local and session storage
-      localStorage.clear();
-      sessionStorage.clear();
-
-      // JavaScript-accessible cookies
-      document.cookie.split(";").forEach(function (cookie) {
-         const name = cookie.split("=")[0].trim();
-
-         document.cookie =
-            `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
-      });
-
-      // Cache Storage
-      if ("caches" in window) {
-         const cacheNames = await caches.keys();
-         await Promise.all(
-            cacheNames.map(function (name) {
-               return caches.delete(name);
-            })
-         );
-      }
-
-      // IndexedDB databases
-      if (indexedDB.databases) {
-         const databases = await indexedDB.databases();
-
-         databases.forEach(function (database) {
-            if (database.name) {
-               indexedDB.deleteDatabase(database.name);
-            }
-         });
-      }
-
-      // Service workers
-      if ("serviceWorker" in navigator) {
-         const registrations =
-            await navigator.serviceWorker.getRegistrations();
-
-         await Promise.all(
-            registrations.map(function (registration) {
-               return registration.unregister();
-            })
-         );
-      }
-
-      alert(" proxy should be fixed now, if not try again");
-      window.top.location.replace("/?reset=" + Date.now());
-   } catch (error) {
-      console.error("Could not clear all site data:", error);
-      alert("Some site data could not be cleared.");
-   }
-});
-</script>
-
-   <style>
       @keyframes shake {
          0% {
             transform: translateX(0);
@@ -265,7 +188,10 @@ document.getElementById("clear-site-data").addEventListener("click", async funct
    const proxyAddress = document.getElementById("uv-address");
 
    function openScramjet(url) {
-      pageFrame.src = `./scramjet/index.html#${encodeURIComponent(url)}`;
+      // reload the frame fresh on every search - a unique marker outside the
+      // hash forces a real navigation each time, not just an in-page hash
+      // change (which wouldn't re-run scramjet's own init/hash-handling code).
+      pageFrame.src = `./scramjet/index.html?_=${Date.now()}#${encodeURIComponent(url)}`;
       document.body.classList.add("frame-open");
       document.body.classList.add("proxy-open");
 

@@ -46,6 +46,36 @@
    </main>
 
    <script>
+      // scramjet's own controller (running inside the embedded frame) can
+      // throw "object stores was not found" from inside an IndexedDB
+      // onsuccess callback, which bypasses normal try/await/catch and
+      // surfaces as an unhandled rejection here at the top level instead -
+      // catch that and self-heal by clearing the stale database and
+      // reloading once, instead of leaving the page permanently broken.
+      window.addEventListener("unhandledrejection", async (event) => {
+         const msg = event.reason?.message || "";
+         if (!msg.includes("object stores") && !msg.includes("IDBDatabase")) return;
+         if (sessionStorage.getItem("scramjetIdbRecovered")) return;
+
+         console.warn("scramjet: stale IndexedDB detected, clearing and reloading...", event.reason);
+         sessionStorage.setItem("scramjetIdbRecovered", "1");
+         event.preventDefault();
+
+         if ("serviceWorker" in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map((r) => r.unregister()));
+         }
+
+         await new Promise((resolve) => {
+            const req = indexedDB.deleteDatabase("$scramjet");
+            req.onsuccess = resolve;
+            req.onerror = resolve;
+            setTimeout(resolve, 2000);
+         });
+
+         location.reload();
+      });
+
       const gameFrame = document.getElementById("game-frame");
       const reloadButton = document.getElementById("reload-button");
       const fullscreenButton = document.getElementById("fullscreen-button");
@@ -118,7 +148,11 @@
       }
 
       function reloadFrame() {
-         gameFrame.src = gameFrame.src;
+         // reassigning to the same value is a no-op in most browsers - force
+         // an actual reload by clearing it first.
+         const current = gameFrame.src;
+         gameFrame.src = "about:blank";
+         gameFrame.src = current;
       }
 
       function fullscreenFrame() {
@@ -250,6 +284,16 @@ iframe {
 
       gameFrame.addEventListener("click", function () {
          gameFrame.focus();
+      });
+
+      // pressing Escape while fullscreen forces the browser to exit it (no
+      // site can override that), which knocks focus off the iframe with
+      // nothing to bring it back - without this, keyboard input silently
+      // stops working the moment fullscreen is exited via Escape.
+      document.addEventListener("fullscreenchange", function () {
+         if (!document.fullscreenElement) {
+            gameFrame.focus();
+         }
       });
 
       reloadButton.addEventListener("click", reloadFrame);
