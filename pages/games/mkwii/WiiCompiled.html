@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width,initial-scale=1" name="viewport">
+  <title>WiiCompiled</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+
+    body,
+    html {
+      height: 100%;
+      margin: 0;
+      background: #000;
+      color: #ddd;
+      font: 15px/1.5 system-ui, sans-serif;
+    }
+
+    #canvas {
+      position: fixed;
+      inset: 0;
+      margin: auto;
+      display: block;
+      outline: 0;
+      width: min(100vw, calc(100vh * 854 / 480));
+      aspect-ratio: 854 / 480;
+    }
+
+    #status {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    #status[hidden] {
+      display: none;
+    }
+
+    #status strong {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    #detail {
+      max-width: 44em;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" tabindex="0"></canvas>
+  <div id="status">
+    <strong id="title">Loading WiiCompiled</strong>
+    <div id="detail"></div>
+  </div>
+
+  <script src="./coi-serviceworker.js"></script>
+
+  <script>
+    const statusBox = document.getElementById("status");
+
+    const showStatus = (e, n = "") => {
+      document.getElementById("title").textContent = e;
+      document.getElementById("detail").textContent = n;
+      statusBox.hidden = false;
+    };
+
+    const problems = [];
+
+    if (!navigator.gpu) {
+      problems.push("This browser has no WebGPU. Use a current Chrome or Edge.");
+    }
+    if (typeof WebAssembly.Suspending !== "function") {
+      problems.push("This browser has no JavaScript Promise Integration. Use Chrome or Edge 137 or later.");
+    }
+
+    const logLimit = 2000;
+    window.mkwLog = [];
+    Error.stackTraceLimit = 120;
+
+    window.addEventListener("unhandledrejection", (e) => {
+      window.mkwLog.push("Unhandled rejection: " + (e.reason?.stack ?? e.reason));
+      pendingLog.push("Unhandled rejection: " + (e.reason?.stack ?? e.reason));
+      sendLog();
+    });
+
+    const pendingLog = [];
+
+    // Only web/serve.mjs has a /log route, and it serves the game from the root.
+    const hasLogServer = !location.pathname.startsWith("/pages/");
+
+    const sendLog = () => {
+      if (pendingLog.length > 0) {
+        if (hasLogServer) {
+          navigator.sendBeacon("/log", pendingLog.join("\n") + "\n");
+        }
+        pendingLog.length = 0;
+      }
+    };
+
+    setInterval(sendLog, 1000);
+
+    addEventListener("error", (e) => {
+      pendingLog.push("Page error: " + (e.error?.stack ?? e.message));
+      sendLog();
+    });
+
+    const recordLog = (e) => {
+      if (window.mkwLog.length < 2000) {
+        window.mkwLog.push(e);
+        pendingLog.push(`[${(performance.now() / 1000).toFixed(1)}s] ${e}`);
+        console.log(e);
+      }
+    };
+
+    var Module = {
+      canvas: document.getElementById("canvas"),
+      noInitialRun: problems.length > 0,
+      arguments: new URLSearchParams(location.search).getAll("arg"),
+      print: (e) => recordLog(e),
+      printErr: (e) => recordLog(e),
+
+      setStatus: (e) => {
+        if (e) {
+          showStatus("Loading WiiCompiled", e);
+        } else {
+          statusBox.hidden = true;
+        }
+      },
+
+      instantiateWasm: (e, n) => {
+        (async () => {
+          const t = await fetch("wasm_parts.json");
+          let o;
+
+          if (t.ok) {
+            const { count: e } = await t.json();
+            let n = 0;
+
+            const s = new ReadableStream({
+              async pull(t) {
+                if (n === e) {
+                  t.close();
+                  return;
+                }
+                const o = `wasm/part${String(n++).padStart(3, "0")}.bin`;
+                t.enqueue(new Uint8Array(await (await fetch(o)).arrayBuffer()));
+              },
+            });
+
+            o = new Response(s.pipeThrough(new DecompressionStream("gzip")), {
+              headers: { "Content-Type": "application/wasm" },
+            });
+          } else {
+            o = fetch("WiiCompiled.wasm");
+          }
+
+          const { instance: s, module: a } = await WebAssembly.instantiateStreaming(o, e);
+          n(s, a);
+        })().catch((e) => Module.onAbort(e));
+
+        return {};
+      },
+
+      onAbort: (e) => {
+        showStatus("WiiCompiled stopped", String(e));
+        recordLog("Aborted: " + e);
+        sendLog();
+      },
+    };
+
+    if (problems.length > 0) {
+      showStatus("WiiCompiled cannot start here", problems.join("\n"));
+    }
+
+    navigator.storage?.persist?.().catch(() => {});
+
+    // The threads need isolation before the runtime starts its workers.
+    window.mkwIsolationReady.then((ready) => {
+      if (!ready) return;
+      const script = document.createElement("script");
+      script.src = "WiiCompiled.js?v=2";
+      script.onerror = () => showStatus("WiiCompiled stopped", "Could not load the game runtime. Reload to try again.");
+      document.body.appendChild(script);
+    }).catch((e) => showStatus("WiiCompiled cannot start here", e.message));
+  </script>
+</body>
+</html>

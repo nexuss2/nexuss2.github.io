@@ -1,73 +1,152 @@
-<!DOCTYPE html>
-<html lang="en">
-
+<!doctype html>
+<html lang="en-us">
 <head>
-   <script>
-      const theme = localStorage.getItem("nexusTheme") || "default";
+<meta charset="utf-8">
+<title>Emscripten App</title>
 
-      document.documentElement.classList.add("theme-" + theme);
-
-      if (theme === "minecraft") {
-         document.documentElement.classList.add("minecraft-theme");
-      }
-
-      if (window.self !== window.top) {
-         document.documentElement.classList.add("in-frame");
-      }
-   </script>
-
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-   <title>Classom - Google</title>
-
-   <link rel="icon" href="/storage/images/googleclassroom.png" type="image/png">
-   <link rel="stylesheet" href="./lce.css">
-   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:Arial}
+#loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:#000;z-index:10}
+#status{font-size:14px;margin-bottom:12px;color:#aaa}
+#progress-container{width:320px;height:8px;background:#222;border-radius:4px;overflow:hidden}
+#progress-bar{width:0%;height:100%;background:#4caf50;transition:width .2s ease}
+#canvas{display:block;background:#000;outline:none}
+</style>
 </head>
 
 <body>
 
-   <main class="lce-page">
-      <section class="lce-card">
-         <div class="lce-icon">
-            <i class="fa-solid fa-cube"></i>
-         </div>
+<div id="loading">
+<div id="status">Downloading...</div>
+<div id="progress-container">
+<div id="progress-bar"></div>
+</div>
+</div>
+<script src="./coi-serviceworker.js?frame-isolation=1"></script>
 
-         <h1>Minecraft Legacy Edition</h1>
+<canvas id="canvas" tabindex="-1"></canvas>
 
-         <p>
-            Minecraft Legacy Edition does not work inside an iframe.
-         </p>
+<script>
+const canvas=document.getElementById("canvas")
+const statusText=document.getElementById("status")
+const progressBar=document.getElementById("progress-bar")
+const loadingDiv=document.getElementById("loading")
 
-         <p class="lce-small">
-            Open one of the links below in the main tab.
-         </p>
+function resizeCanvas(){
+const dpr=window.devicePixelRatio||1
+const w=window.innerWidth
+const h=window.innerHeight
+canvas.style.width=w+"px"
+canvas.style.height=h+"px"
+const pixelWidth=Math.floor(w*dpr)
+const pixelHeight=Math.floor(h*dpr)
+if(canvas.width!==pixelWidth)canvas.width=pixelWidth
+if(canvas.height!==pixelHeight)canvas.height=pixelHeight
+}
 
-         <div class="lce-actions">
-            <a href="https://lce-wasm.vercel.app/" target="_blank" class="lce-button">
-               open link 1
-            </a>
+window.addEventListener("resize",resizeCanvas)
 
-            <a href="https://nexuslce.global.ssl.fastly.net/" target="_blank" class="lce-button secondary">
-               open link 2 
-            </a>
-         </div>
-      </section>
-   </main>
+function hardResize(){
+resizeCanvas()
+requestAnimationFrame(resizeCanvas)
+setTimeout(resizeCanvas,50)
+setTimeout(resizeCanvas,200)
+setTimeout(resizeCanvas,500)
+}
 
-   <script>
-      if (
-         localStorage.getItem("nexusTheme") === "minecraft" &&
-         window.self === window.top
-      ) {
-         const script = document.createElement("script");
-         script.type = "module";
-         script.src = "/storage/themes/minecraft/theme.js";
-         document.body.appendChild(script);
-      }
-   </script>
+function setStatus(text){
+const m=text.match(/([^(]+)\((\d+)\/(\d+)\)/)
+if(m){
+const loaded=parseInt(m[2])
+const total=parseInt(m[3])
+const pct=(loaded/total)*100
+progressBar.style.width=pct+"%"
+statusText.textContent=m[1]+" "+Math.round(pct)+"%"
+}else if(!text){
+progressBar.style.width="100%"
+statusText.textContent="Running"
+setTimeout(()=>{
+loadingDiv.style.display="none"
+canvas.focus()
+hardResize()
+},200)
+}else{
+statusText.textContent=text
+}
+}
+
+let cachedData=null
+
+function loadData(){
+const xhr=new XMLHttpRequest()
+xhr.open("GET","https://nostaligafun.pages.dev/games/games-accualy/OTHER/MinecraftLegacyConsoleEdition_Data/Minecraft.Client.data",true)
+xhr.responseType="arraybuffer"
+
+xhr.onprogress=e=>{
+if(e.lengthComputable){
+const pct=(e.loaded/e.total)*100
+progressBar.style.width=pct+"%"
+statusText.textContent="Downloading "+Math.round(pct)+"%"
+}
+}
+
+xhr.onload=()=>{
+if(xhr.status<200||xhr.status>=300||!xhr.response?.byteLength){
+statusText.textContent="Download failed (HTTP "+xhr.status+")"
+return
+}
+cachedData=xhr.response
+statusText.textContent="Compiling shaders..."
+startGame()
+}
+
+xhr.onerror=()=>{
+statusText.textContent="Download failed"
+}
+
+xhr.send()
+}
+
+function startGame(){
+const script=document.createElement("script")
+script.src="Minecraft.Client.js"
+script.onload=()=>{
+hardResize()
+}
+script.onerror=()=>{
+statusText.textContent="Could not load the game runtime. Reload to try again."
+}
+document.body.appendChild(script)
+}
+
+var Module={
+canvas:canvas,
+setStatus:setStatus,
+preRun:[hardResize],
+onRuntimeInitialized(){
+hardResize()
+},
+monitorRunDependencies(left){
+this.totalDependencies=Math.max(this.totalDependencies||0,left)
+setStatus(left?"Preparing... ("+(this.totalDependencies-left)+"/"+this.totalDependencies+")":"")
+},
+getPreloadedPackage(){
+return cachedData
+}
+}
+
+hardResize()
+setStatus("Preparing Minecraft...")
+window.minecraftIsolationReady.then(ready=>{
+if(!ready)return
+setStatus("Downloading...")
+loadData()
+}).catch(error=>{
+statusText.textContent=error.message
+console.error(error)
+})
+</script>
 
 </body>
-
 </html>

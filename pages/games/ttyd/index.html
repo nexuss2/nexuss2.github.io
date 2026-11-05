@@ -1,74 +1,187 @@
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Video</title>
+<!doctype html>
+<html lang="en"><script>(function(){try{if(window.__nfAudioHook)return;var AC=window.AudioContext||window.webkitAudioContext;if(!AC||!window.AudioNode)return;window.__nfAudioHook=true;window.__nfAudioStreams=window.__nfAudioStreams||[];var ensureTap=function(c){if(!c.__nfTap){c.__nfTap=c.createMediaStreamDestination();window.__nfAudioStreams.push(c.__nfTap.stream);}return c.__nfTap;};var oc=window.AudioNode.prototype.connect;window.AudioNode.prototype.connect=function(d){var r=oc.apply(this,arguments);try{var c=this.context;if(c&&d===c.destination)oc.call(this,ensureTap(c));}catch(e){}return r;};var wrap=function(C){var P=function(){var c=Reflect.construct(C,arguments,P);try{ensureTap(c);}catch(e){}return c;};P.prototype=C.prototype;return P;};if(window.AudioContext)window.AudioContext=wrap(window.AudioContext);if(window.webkitAudioContext)window.webkitAudioContext=wrap(window.webkitAudioContext);}catch(e){}})();</script>
+<head><script>(function(){try{if(window.__nfAudioHook)return;var AC=window.AudioContext||window.webkitAudioContext;if(!AC||!window.AudioNode)return;window.__nfAudioHook=true;window.__nfAudioStreams=window.__nfAudioStreams||[];var ensureTap=function(c){if(!c.__nfTap){c.__nfTap=c.createMediaStreamDestination();window.__nfAudioStreams.push(c.__nfTap.stream);}return c.__nfTap;};var oc=window.AudioNode.prototype.connect;window.AudioNode.prototype.connect=function(d){var r=oc.apply(this,arguments);try{var c=this.context;if(c&&d===c.destination)oc.call(this,ensureTap(c));}catch(e){}return r;};var wrap=function(C){var P=function(){var c=Reflect.construct(C,arguments,P);try{ensureTap(c);}catch(e){}return c;};P.prototype=C.prototype;return P;};if(window.AudioContext)window.AudioContext=wrap(window.AudioContext);if(window.webkitAudioContext)window.webkitAudioContext=wrap(window.webkitAudioContext);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paper Mario: The Thousand-Year Door</title>
+<style>
+  :root {
+    --bg: #05070d; --fg: #e8ecf6; --dim: #8c96b3; --accent: #2f6fff; --accent-2: #5a8cff;
+    --panel: rgba(17, 23, 42, .96); --line: rgba(255, 255, 255, .09); --key: #1f2847;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--fg);
+    font: 15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  button { font: inherit; color: inherit; cursor: pointer; }
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+  /* The game fills the window at 4:3 (letterboxed). */
+  #screen { position: fixed; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; }
+  /* The game's frames are not 4:3 in pixels (e.g. 640x528): stretch them into the largest 4:3 box. */
+  #display, #intro { width: min(100vw, calc(100vh * 4 / 3)); height: min(100vh, calc(100vw * 3 / 4)); display: block;
+    outline: none; }
+  /* GameCube startup screen, played before the game starts. */
+  #intro { position: absolute; object-fit: contain; background: #000; }
+  #intro[hidden] { display: none; }
 
-    html,
-    body {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      overflow: hidden;
-      background: black;
-      font-family: Arial, sans-serif;
-    }
+  /* Start / loading screen. */
+  #overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at center, #10183a 0%, #05070d 70%); padding: 24px; }
+  #overlay.hidden { display: none; }
+  #overlay.clickable { cursor: pointer; }
+  .card { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; max-width: 480px; }
+  .card h1 { margin: 0; font-size: 30px; letter-spacing: .02em; }
+  .card h1 span { color: var(--accent-2); }
+  #message { margin: 0; color: var(--dim); }
+  #progress-wrap { width: min(360px, 80vw); height: 6px; border-radius: 3px; background: var(--key); overflow: hidden; }
+  #progress-wrap.hidden { display: none; }
+  #progress-bar { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+  #start-hint { font-size: 18px; padding: 12px 28px; border-radius: 999px; border: 0; background: var(--accent);
+    color: white; animation: pulse 1.6s ease-in-out infinite; }
+  #start-hint.hidden { display: none; }
+  @keyframes pulse { 50% { opacity: .65; } }
 
-    #continue-screen {
-      position: fixed;
-      inset: 0;
-      z-index: 2;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: black;
-      color: white;
-      font-size: 24px;
-      cursor: pointer;
-      user-select: none;
-    }
+  /* Settings button: top right, fades out while the mouse is still during play. */
+  #gear { position: fixed; top: 14px; right: 14px; z-index: 5; width: 42px; height: 42px; border-radius: 50%;
+    border: 1px solid var(--line); background: rgba(10, 14, 28, .7); display: grid; place-items: center;
+    transition: opacity .4s; }
+  #gear:hover { background: rgba(30, 40, 75, .9); }
+  body.idle #gear { opacity: 0; }
+  #gear svg { width: 22px; height: 22px; fill: var(--fg); }
 
-    #video {
-      display: none;
-      width: 100%;
-      height: 100%;
-      background: black;
-      object-fit: contain;
-    }
-  </style>
+  /* Pause button, left of the gear. */
+  #pause { position: fixed; top: 14px; right: 64px; z-index: 5; width: 42px; height: 42px; border-radius: 50%;
+    border: 1px solid var(--line); background: rgba(10, 14, 28, .7); display: grid; place-items: center;
+    transition: opacity .4s; }
+  #pause:hover { background: rgba(30, 40, 75, .9); }
+  body.idle #pause:not(.paused) { opacity: 0; }
+  #pause svg { width: 20px; height: 20px; fill: var(--fg); }
+  #pause .play, #pause.paused .bars { display: none; }
+  #pause.paused .play { display: block; }
+
+  /* Settings panel. */
+  #settings { position: fixed; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center;
+    background: rgba(0, 0, 0, .55); }
+  #settings.hidden { display: none; }
+  .panel { width: min(640px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; box-shadow: 0 20px 60px rgba(0, 0, 0, .5); }
+  .panel header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .panel h2 { margin: 0; font-size: 20px; }
+  .panel h3 { margin: 18px 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); }
+  .icon-btn { border: 0; background: none; font-size: 22px; line-height: 1; padding: 4px 8px; border-radius: 8px; }
+  .icon-btn:hover { background: var(--key); }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 0;
+    border-bottom: 1px solid var(--line); }
+  .row:last-child { border-bottom: 0; }
+  .row .name { flex: 1; }
+  .keys { display: flex; gap: 8px; }
+  .key { min-width: 108px; padding: 5px 10px; border-radius: 7px; border: 1px solid var(--line); background: var(--key);
+    font: 13px ui-monospace, Consolas, monospace; text-align: center; }
+  .key:hover { border-color: var(--accent-2); }
+  .key.empty { color: var(--dim); }
+  .key.wide { min-width: 190px; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+  .tab { padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line); background: none; color: var(--dim); }
+  .tab.active { background: var(--accent); border-color: var(--accent); color: white; }
+  .pick { max-width: 300px; padding: 6px 8px; border-radius: 7px; border: 1px solid var(--line);
+    background: var(--key); color: var(--fg); font: inherit; font-size: 13px; }
+  .check { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--dim); white-space: nowrap; }
+  /* FPS counter: top right, left of the settings button. */
+  #fps { position: fixed; top: 18px; right: 68px; z-index: 5; padding: 4px 10px; border-radius: 8px;
+    background: rgba(0, 0, 0, .55); color: #7dff8a; font: 600 15px ui-monospace, Consolas, monospace;
+    pointer-events: none; }
+  #fps.hidden { display: none; }
+  .row.hidden { display: none; }
+  .key.listening { border-color: var(--accent); background: #22346e; animation: pulse 1s infinite; }
+  .hint { color: var(--dim); font-size: 13px; margin: 4px 0 0; }
+  .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; }
+  .btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--key); }
+  .btn:hover { border-color: var(--accent-2); }
+  .switch { position: relative; width: 44px; height: 24px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch span { position: absolute; inset: 0; border-radius: 12px; background: var(--key); border: 1px solid var(--line);
+    transition: background .2s; cursor: pointer; }
+  .switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--fg); transition: transform .2s; }
+  .switch input:checked + span { background: var(--accent); }
+  .switch input:checked + span::after { transform: translateX(20px); }
+
+  /* Info bar: status and the game's log, shown only when enabled in the settings. */
+  #infobar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; max-height: 32vh; display: flex;
+    flex-direction: column; background: rgba(5, 8, 18, .82); border-top: 1px solid var(--line); }
+  #infobar.hidden { display: none; }
+  #status { padding: 6px 12px 2px; color: var(--fg); font-size: 13px; }
+  #log { flex: 1; overflow: auto; margin: 0; padding: 2px 12px 8px; font: 12px/1.3 ui-monospace, Consolas, monospace;
+    color: var(--dim); white-space: pre-wrap; }
+</style>
+<script src="./coi-serviceworker.js"></script>
 </head>
-
 <body>
-  <div id="continue-screen">click to continue</div>
+  <div id="screen">
+    <!-- frames from the renderer thread are shown here (see sadxPresent in ttyd-page.js) -->
+    <canvas id="display" width="1280" height="960" tabindex="0"></canvas>
+    <video id="intro" src="mp4/loading.mp4" preload="auto" playsinline hidden></video>
+    <!-- the renderer draws into this one from its worker thread; it is never shown directly -->
+    <canvas id="canvas" width="1280" height="960" hidden></canvas>
+    <!-- given to the wasm main thread so the real canvas stays free for the renderer thread -->
+    <canvas id="sadx-main-thread-canvas" width="1" height="1" hidden></canvas>
+    <div id="overlay">
+      <div class="card">
+        <h1>Paper Mario: <span>The Thousand-Year Door</span></h1>
+        <p id="message">Getting ready...</p>
+        <div id="progress-wrap" class="hidden"><div id="progress-bar"></div></div>
+        <button id="start-hint" class="hidden">Reload</button>
+      </div>
+    </div>
+  </div>
 
-  <video id="video" playsinline></video>
+  <button id="pause" title="Pause" aria-label="Pause" aria-pressed="false">
+    <svg class="bars" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.2" height="15" rx="1.2"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.2"/></svg>
+    <svg class="play" viewBox="0 0 24 24"><path d="M8 4.8v14.4a1 1 0 0 0 1.5.86l11.2-7.2a1 1 0 0 0 0-1.72L9.5 3.94A1 1 0 0 0 8 4.8z"/></svg>
+  </button>
+  <button id="gear" title="Settings" aria-label="Settings">
+    <svg viewBox="0 0 24 24"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.5zM13 15.5A3.5 3.5 0 1 1 13 8.5a3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg>
+  </button>
 
-  <script>
-    const continueScreen = document.getElementById("continue-screen");
-    const video = document.getElementById("video");
-    const randomVideo = Math.floor(Math.random() * 5) + 1;
+  <div id="settings" class="hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="panel">
+      <header>
+        <h2 id="settings-title">Settings</h2>
+        <button class="icon-btn" id="settings-close" aria-label="Close">&times;</button>
+      </header>
+      <h3>Display</h3>
+      <div class="row">
+        <span class="name">Show info bar <span class="hint">(status and log)</span></span>
+        <label class="switch"><input type="checkbox" id="opt-info"><span></span></label>
+      </div>
+      <div class="row">
+        <span class="name">Show FPS counter</span>
+        <label class="switch"><input type="checkbox" id="opt-fps"><span></span></label>
+      </div>
+      <div class="row">
+        <span class="name">Fullscreen</span>
+        <button class="btn" id="opt-fullscreen">Toggle</button>
+      </div>
+      <h3>Players</h3>
+      <div id="players"></div>
+      <p class="hint" id="players-hint"></p>
+      <h3>Controls</h3>
+      <div class="tabs">
+        <button class="tab active" data-tab="keyboard">Keyboard</button>
+        <button class="tab" data-tab="controller">Controller</button>
+      </div>
+      <p class="hint" id="binds-hint"></p>
+      <div id="binds"></div>
+      <div class="actions"><button class="btn" id="binds-reset">Reset to defaults</button></div>
+    </div>
+  </div>
 
-    video.src = `./${randomVideo}.mp4`;
+  <div id="fps" class="hidden"></div>
 
-    continueScreen.addEventListener("click", async () => {
-      continueScreen.style.display = "none";
-      video.style.display = "block";
-
-      try {
-        await video.play();
-      } catch {
-        continueScreen.style.display = "flex";
-        video.style.display = "none";
-      }
-    });
-  </script>
+  <div id="infobar" class="hidden">
+    <div id="status"></div>
+    <pre id="log"></pre>
+  </div>
+  <script src="js/ttyd.js"></script>
+  <script src="js/ttyd-page.js"></script>
 </body>
 </html>
-```

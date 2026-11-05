@@ -143,7 +143,7 @@
       checkGridAlignment();
     });
 
-    document.getElementById("random-button").addEventListener("click", () => {
+    document.getElementById("random-button")?.addEventListener("click", () => {
       const games = Array.from(document.querySelectorAll(".game-button a"));
       if (games.length === 0) return;
       const randomIndex = Math.floor(Math.random() * games.length);

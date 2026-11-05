@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WiiCompiled</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { height: 100%; margin: 0; background: #000; color: #ddd;
+               font: 15px/1.5 system-ui, sans-serif; }
+  /* Sized to the picture itself, because the mouse maps across the whole element. */
+  #canvas { position: fixed; inset: 0; margin: auto; display: block; outline: none;
+            width: min(100vw, calc(100vh * 854 / 480)); aspect-ratio: 854 / 480; }
+  #status { position: fixed; inset: 0; display: flex; flex-direction: column; gap: 8px;
+            align-items: center; justify-content: center; padding: 16px; text-align: center;
+            pointer-events: none; }
+  #status[hidden] { display: none; }
+  #status strong { font-size: 20px; font-weight: 600; }
+  #detail { max-width: 44em; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<canvas id="canvas" tabindex="0"></canvas>
+<div id="status"><strong id="title">Loading WiiCompiled</strong><div id="detail"></div></div>
+<script>
+  const statusBox = document.getElementById('status');
+  const showStatus = (title, detail = '') => {
+    document.getElementById('title').textContent = title;
+    document.getElementById('detail').textContent = detail;
+    statusBox.hidden = false;
+  };
+
+  const problems = [];
+  if (!crossOriginIsolated) problems.push('This page must be served by web/serve.mjs, which sends the isolation headers threads need.');
+  if (!navigator.gpu) problems.push('This browser has no WebGPU. Use a current Chrome or Edge.');
+  if (typeof WebAssembly.Suspending !== 'function') problems.push('This browser has no JavaScript Promise Integration. Use Chrome or Edge 137 or later.');
+
+  // A crash can repeat fast enough to push its first lines out of the console, so the head of the
+  // log is kept for diagnosis as window.mkwLog.
+  const logLimit = 2000;
+  window.mkwLog = [];
+  Error.stackTraceLimit = 120;
+  window.addEventListener('unhandledrejection', (event) => {
+    window.mkwLog.push('Unhandled rejection: ' + (event.reason?.stack ?? event.reason));
+    pendingLog.push('Unhandled rejection: ' + (event.reason?.stack ?? event.reason));
+    sendLog();
+  });
+  const pendingLog = [];
+  const sendLog = () => {
+    if (pendingLog.length > 0) {
+      navigator.sendBeacon('/log', pendingLog.join('\n') + '\n');
+      pendingLog.length = 0;
+    }
+  };
+  setInterval(sendLog, 1000);
+  addEventListener('error', (event) => {
+    pendingLog.push('Page error: ' + (event.error?.stack ?? event.message));
+    sendLog();
+  });
+  const recordLog = (text) => {
+    if (window.mkwLog.length < logLimit) {
+      window.mkwLog.push(text);
+      pendingLog.push(`[${(performance.now() / 1000).toFixed(1)}s] ${text}`);
+      console.log(text);
+    }
+  };
+
+  var Module = {
+    canvas: document.getElementById('canvas'),
+    noInitialRun: problems.length > 0,
+    // Runtime options come from the URL, for example ?arg=--race&arg=--race-cpu
+    arguments: new URLSearchParams(location.search).getAll('arg'),
+    print: (text) => recordLog(text),
+    printErr: (text) => recordLog(text),
+    setStatus: (text) => {
+      if (text) showStatus('Loading WiiCompiled', text);
+      else statusBox.hidden = true;
+    },
+    // A packaged build keeps its code as gzipped parts. Streaming them straight into the compiler
+    // needs no more memory than loading a single file would.
+    instantiateWasm: (imports, receiveInstance) => {
+      (async () => {
+        const manifest = await fetch('wasm_parts.json');
+        let response;
+        if (manifest.ok) {
+          const { count } = await manifest.json();
+          let next = 0;
+          const compressed = new ReadableStream({
+            async pull(controller) {
+              if (next === count) {
+                controller.close();
+                return;
+              }
+              const name = `wasm/part${String(next++).padStart(3, '0')}.bin`;
+              controller.enqueue(new Uint8Array(await (await fetch(name)).arrayBuffer()));
+            },
+          });
+          response = new Response(compressed.pipeThrough(new DecompressionStream('gzip')),
+                                  { headers: { 'Content-Type': 'application/wasm' } });
+        } else {
+          response = fetch('WiiCompiled.wasm');
+        }
+        const { instance, module } = await WebAssembly.instantiateStreaming(response, imports);
+        receiveInstance(instance, module);
+      })().catch((error) => Module.onAbort(error));
+      return {};
+    },
+    onAbort: (reason) => {
+      showStatus('WiiCompiled stopped', String(reason));
+      recordLog('Aborted: ' + reason);
+      sendLog();
+    },
+  };
+  if (problems.length > 0) showStatus('WiiCompiled cannot start here', problems.join('\n'));
+  // Asks the browser not to clear saves when disk space runs low.
+  navigator.storage?.persist?.().catch(() => {});
+</script>
+{{{ SCRIPT }}}
+</body>
+</html>

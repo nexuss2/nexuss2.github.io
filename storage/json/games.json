@@ -461,6 +461,12 @@
     "alt": "Mario Kart DS",
     "title": "Mario Kart DS"
   },
+   {
+    "url": "/pages/iframe.html?url=/pages/games/mkwii/WiiCompiled.html",
+    "img": "/pages/images/mkwii.png",
+    "alt": "Mario Kart Wii",
+    "title": "Mario Kart Wii"
+  },
   {
     "url": "/pages/iframe.html?url=/pages/games/mcle/",
     "img": "/pages/images/mclegacy.webp",
@@ -536,7 +542,7 @@
   {
     "url": "/pages/iframe.html?url=/pages/games/ttyd/",
     "img": "/pages/images/ttyd.webp",
-    "alt": "Paper Mario: TTYD (coming soon)",
+    "alt": "Paper Mario: TTYD",
     "title": "Paper Mario: The Thousand Year Door"
   },
   {

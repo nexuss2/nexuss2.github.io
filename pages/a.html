@@ -140,7 +140,7 @@
          loadApps();
       });
 
-      document.getElementById("random-button").addEventListener("click", function () {
+      document.getElementById("random-button")?.addEventListener("click", function () {
          const apps = Array.from(document.querySelectorAll(".game-button a"));
 
          if (apps.length === 0) {
