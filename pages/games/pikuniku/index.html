@@ -10,7 +10,32 @@
     <script src="TemplateData/UnityProgress.js"></script>
     <script src="Build/UnityLoader.js"></script>
     <script>
-      var unityInstance = UnityLoader.instantiate("unityContainer", "Build/pikubog.json", {onProgress: UnityProgress});
+      // The big build files are split into <25 MB parts; stitch them back together in memory.
+      async function mergeParts(base, count, type) {
+        const parts = await Promise.all(
+          Array.from({length: count}, (_, i) =>
+            fetch(base + ".part" + (i + 1)).then(r => {
+              if (!r.ok) throw new Error("Could not load " + base + ".part" + (i + 1));
+              return r.arrayBuffer();
+            }))
+        );
+        return URL.createObjectURL(new Blob(parts, type ? {type: type} : undefined));
+      }
+      var unityInstance;
+      Promise.all([
+        mergeParts("Build/pikubog.data.unityweb", 6),
+        mergeParts("Build/pikubog.wasm.code.unityweb", 2, "application/wasm")
+      ]).then(function (urls) {
+        unityInstance = UnityLoader.instantiate("unityContainer", "Build/pikubog.json", {
+          onProgress: UnityProgress,
+          Module: {
+            dataUrl: urls[0],
+            wasmCodeUrl: urls[1],
+            resolveBuildUrl: function (u) { return /^(blob:|https?:)/.test(u) ? u : "Build/" + u; },
+            locateFile: function (f) { return f == "build.wasm" ? this.wasmCodeUrl : "Build/" + f; }
+          }
+        });
+      }).catch(function (e) { console.error(e); alert(e.message); });
     </script>
   </head>
   <style>* {margin: 0;padding: 0;box-sizing: border-box;}html,body {width: 100%;height: 100%;overflow: hidden;background: #121E1E;}.webgl-content {width: 100%;height: 100%;}#unityContainer {width: 100%;height: 100%;}#unityContainer canvas {width: 100% !important;height: 100% !important;display: block;}
@@ -18,7 +43,6 @@
   <body>
     <div class="webgl-content">
       <div id="unityContainer" style="width: 100%; height: 100%"></div>
-      </div>
     </div>
   </body>
 </html>
