@@ -733,7 +733,9 @@ async function start(audioCtx, ready = Promise.resolve()) {
   status('Starting the game...');
   // ?noframelimit: no speed cap (the game runs as fast as this machine can; default is normal speed).
   const debug = [params.get('debug'), params.has('noframelimit') ? 'noframelimit' : ''].filter(Boolean).join(',');
-  await ready;
+  // The game boots right away, behind the intro video (which covers the display until it ends),
+  // so it is already running when the video finishes. `ready` is only waited on by callers.
+  void ready;
   Module.callMain(['/opfs/' + DISC_NAME, video, params.get('shaders') || 'spec', params.get('scale') || '1',
                    params.get('xfb') || 'tex', debug, bootPortMask]);
   $('display').focus();
@@ -833,23 +835,43 @@ window.sadxLoadedModules = () => loadedModules(window.sadxModule);  // debugging
   start(audioCtx, playIntro());
 })();
 
-// The GameCube startup screen (mp4/loading.mp4), shown while the game loads behind it. Browsers only
+// The GameCube startup screen (mp4/gamecube-boot.mp4, captured from the real BIOS in Dolphin), shown while the game loads behind it. Browsers only
 // autoplay sound after the page has had a click or key press, so without one it plays muted.
 // Resolves when it has finished (or cannot play at all).
 function playIntro() {
   const video = $('intro');
+  const display = $('display');
+  // The game boots behind the video; keep it dark until the boot screen hands over to it.
+  display.style.opacity = '0';
   return new Promise((resolve) => {
+    let finished = false;
     const done = () => {
+      if (finished) return;
+      finished = true;
       video.pause();
-      video.hidden = true;
-      video.removeAttribute('src');
-      video.load();  // frees the decoder
-      // Until the game's first frame, the loading card shows what it is doing.
-      if (!window.sadxFrames) {
-        message.textContent = statusEl.textContent || 'Starting the game...';
-        overlay.classList.remove('hidden');
-      }
-      resolve();
+      // The recording ends partway through the BIOS's own fade-out of the logo: finish that fade
+      // to black, as the console does before the game's first picture.
+      video.style.transition = 'opacity 350ms linear';
+      video.style.opacity = '0';
+      const blackSince = performance.now();
+      // Then fade the game in, once it has a frame and the screen has been black for a moment.
+      // The loading card shows only if the game takes unusually long (e.g. the first visit).
+      const poll = setInterval(() => {
+        const waited = performance.now() - blackSince;
+        if (window.sadxFrames && waited >= 650) {
+          clearInterval(poll);
+          video.hidden = true;
+          video.removeAttribute('src');
+          video.load();  // frees the decoder
+          display.style.transition = 'opacity 600ms ease-out';
+          display.style.opacity = '1';
+          setTimeout(() => { display.style.transition = ''; }, 700);
+          resolve();
+        } else if (!window.sadxFrames && waited > 8000 && overlay.classList.contains('hidden')) {
+          message.textContent = statusEl.textContent || 'Starting the game...';
+          overlay.classList.remove('hidden');
+        }
+      }, 30);
     };
     video.addEventListener('ended', done, { once: true });
     video.addEventListener('error', done, { once: true });
